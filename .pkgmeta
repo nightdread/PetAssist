@@ -1,0 +1,9 @@
+package-as: PetAssist
+ignore:
+  - README.md
+  - CHANGELOG.md
+  - LICENSE
+  - .pkgmeta
+  - logo.png
+  - icon.png
+manual-changelog: CHANGELOG.md
