@@ -2,8 +2,10 @@ package-as: PetAssist
 ignore:
   - README.md
   - CHANGELOG.md
-  - LICENSE
   - .pkgmeta
+  - .gitignore
   - logo.png
+  - logo-curseforge.png
   - icon.png
+  - .github
 manual-changelog: CHANGELOG.md

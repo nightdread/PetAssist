@@ -14,7 +14,11 @@
 ]]
 
 local ADDON_NAME = ...
-local VERSION = "1.4.0"
+local VERSION = "@project-version@"
+-- Unpackaged working copy (placeholder not replaced by packager)
+if VERSION:find("@", 1, true) then
+  VERSION = "1.4.0-dev"
+end
 
 local MODE_ALL = "all"
 local MODE_HARM = "harm"

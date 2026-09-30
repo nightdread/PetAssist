@@ -74,3 +74,14 @@ Bind a key (options UI or `/pa recall KEY`) to pull the pet back: Passive + Foll
 ## Support
 
 Classic Era (`## Interface: 11509`). Warlock / Hunter pets.
+
+## Releasing (CurseForge)
+
+Releases upload automatically when you push a version tag:
+
+```bash
+git tag v1.4.1
+git push origin v1.4.1
+```
+
+Requires GitHub secret `CF_API_KEY` and `## X-Curse-Project-ID` in the `.toc`.

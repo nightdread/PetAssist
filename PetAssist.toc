@@ -3,10 +3,11 @@
 ## Notes: Pet attacks on cast; SoftCC pulls pet on Fear/Banish (Warlock/Hunter).
 ## Notes-ruRU: Пет атакует с кастом; SoftCC отзывает пета на Fear/Banish.
 ## Author: Artem
-## Version: 1.4.0
+## Version: @project-version@
 ## IconTexture: Interface\AddOns\PetAssist\icon
 ## SavedVariablesPerCharacter: PetAssistDB
 ## DefaultState: enabled
 ## X-Category: Combat
+## X-Curse-Project-ID: 1719459
 
 PetAssist.lua
