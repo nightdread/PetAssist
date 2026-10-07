@@ -1,5 +1,5 @@
 --[[
-  PetAssist 1.4.0 — Classic Era
+  PetAssist 1.5.0 — Classic Era
 
   PetAttack() is forbidden from addon code. Keybinds are overridden to secure
   proxy buttons whose macrotext is:
@@ -17,7 +17,7 @@ local ADDON_NAME = ...
 local VERSION = "@project-version@"
 -- Unpackaged working copy (placeholder not replaced by packager)
 if VERSION:find("@", 1, true) then
-  VERSION = "1.4.0-dev"
+  VERSION = "1.5.0-dev"
 end
 
 local MODE_ALL = "all"
@@ -29,12 +29,129 @@ local PA_NONE = 0
 local PA_ASSIST = 1
 local PA_SOFTCC = 2
 
+-- ===== Localization =====
+local L = {}
+local locale = GetLocale()
+
+-- Default English strings
+L.ENABLED = "Enabled"
+L.ADDON_READY = "v%s ready [%s]: proxy %d, keys %d, extra %d."
+L.REFRESH_AFTER_COMBAT = "refresh after combat…"
+L.SOFTCC_GUARD = "SoftCC Guard — recall pet on Fear/Banish (passive+follow)"
+L.RESTORE_STANCE = "Restore pet stance after SoftCC (e.g. /petdefensive before /petattack)"
+L.MODE_ALL_DESC = "all — pet on EVERY button (including Fear)"
+L.MODE_CUSTOM_DESC = "custom — pet always, except /pa block"
+L.MODE_HARM_DESC = "harm — pet on damage/DoTs, NOT on Fear/stones/buffs"
+L.MODE_LABEL = "Mode:"
+L.MODE_ALL_HINT = "Pet goes even on Life Tap / stones. SoftCC still recalls on Fear."
+L.MODE_CUSTOM_HINT = "Custom list: /pa block Name  |  /pa unblock Name"
+L.MODE_HARM_HINT = "Corruption, curses, SB — yes. Fear/Banish — SoftCC (passive+follow). Stones — no."
+L.RECALL_LABEL = "Recall (pet recall):"
+L.RECALL_UNBOUND = "not bound"
+L.CUSTOM_BLACKLIST = "Custom blacklist: %d names (custom mode only)"
+L.BIND_RECALL = "Bind Recall"
+L.PRESS_KEY = "Press a key…"
+L.CLEAR = "Clear"
+L.RECALL_CLEARED = "Recall bind cleared."
+L.REFRESH = "Refresh"
+L.SLASH_HINT = "/pa softcc on|off  |  /pa block Fear  |  /pa mode harm"
+L.ESCAPE_OPTIONS = "Esc → Options → AddOns → PetAssist"
+L.SUBTITLE = "Pet attacks your target with your cast (Warlock / Hunter)"
+L.ADDON_DISABLED = "disabled."
+L.SOFTCC_ON = "SoftCC enabled."
+L.SOFTCC_OFF = "SoftCC disabled."
+L.STANCE_RESTORE_ON = "Stance restore enabled."
+L.STANCE_RESTORE_OFF = "Stance restore disabled."
+L.MODE_CHANGED = "mode → %s"
+L.USAGE_MODE = "Usage: /pa mode all|harm|custom (current: %s)"
+L.USAGE_BLOCK = "Usage: /pa block SpellName"
+L.BLOCK_ADDED = "Added to blacklist. Enable custom: /pa mode custom"
+L.BLOCKED = "block: %s"
+L.USAGE_UNBLOCK = "Usage: /pa unblock SpellName"
+L.UNBLOCKED = "unblock: %s"
+L.RECALL_BIND_USAGE = "Recall bind cleared. To bind: /pa recall SHIFT-F"
+L.RECALL_BOUND = "Recall → %s (/petpassive + /petfollow)"
+L.TEST_OUTPUT = "v%s | on=%s | mode=%s | softCC=%s | restore=%s | proxy=%d | wrap=%d | keyDown=%s | lockdown=%s | recall=%s"
+L.TEST_BUTTON_ACTION = "ActionButton1 action=%s macro:\n%s"
+L.TEST_NO_PROXY = "ActionButton1 proxy not yet created — /petassist refresh"
+L.STATUS_OUTPUT = "%s | %s | SoftCC %s | stance restore %s"
+L.STATUS_ENABLED = "enabled v%s"
+L.STATUS_DISABLED = "disabled"
+L.SLASH_HELP = "Commands: on|off|refresh|test|status|config|mode|softcc|stance|block|unblock|recall"
+L.SLASH_MODE_STATUS = "Mode: %s | SoftCC: %s | Stance restore: %s"
+L.UNKNOWN_COMMAND = "Unknown command. /pa help"
+L.CANNOT_BIND_COMBAT = "cannot change bind in combat."
+L.SOFTCC_TOGGLE = "SoftCC → %s"
+L.SOFTCC_ON_DESC = "on (Fear/Banish recall pet)"
+L.SOFTCC_OFF_DESC = "off"
+L.STANCE_TOGGLE = "Stance restore → %s"
+L.CLASS_NOT_SUPPORTED = "PetAssist: only for Hunter and Warlock."
+
+-- Russian (ruRU)
+if locale == "ruRU" then
+  L.ENABLED = "Включён"
+  L.ADDON_READY = "v%s готов [%s]: proxy %d, клавиш %d, extra %d."
+  L.REFRESH_AFTER_COMBAT = "обновление после боя…"
+  L.SOFTCC_GUARD = "SoftCC Guard — на Fear/Banish отзывать пета (passive+follow)"
+  L.RESTORE_STANCE = "Восстановить стойку пета после SoftCC (например, /petdefensive перед /petattack)"
+  L.MODE_ALL_DESC = "all — пет на КАЖДУЮ кнопку (включая Fear)"
+  L.MODE_CUSTOM_DESC = "custom — пет всегда, кроме /pa block"
+  L.MODE_HARM_DESC = "harm — пет на урон/DoT, НЕ на Fear/камни/баффы"
+  L.MODE_LABEL = "Режим:"
+  L.MODE_ALL_HINT = "Пет полетит даже от Life Tap / камней. SoftCC всё равно отзовёт на Fear."
+  L.MODE_CUSTOM_HINT = "Свой список: /pa block Имя  |  /pa unblock Имя"
+  L.MODE_HARM_HINT = "Corruption, курсы, SB — да. Fear/Banish — SoftCC (passive+follow). Камни — нет."
+  L.RECALL_LABEL = "Recall (отзыв пета):"
+  L.RECALL_UNBOUND = "не назначен"
+  L.CUSTOM_BLACKLIST = "Custom blacklist: %d имён (только для режима custom)"
+  L.BIND_RECALL = "Назначить Recall"
+  L.PRESS_KEY = "Нажми клавишу…"
+  L.CLEAR = "Сброс"
+  L.RECALL_CLEARED = "Recall бинд сброшен."
+  L.REFRESH = "Refresh"
+  L.SLASH_HINT = "/pa softcc on|off  |  /pa block Fear  |  /pa mode harm"
+  L.ESCAPE_OPTIONS = "Esc → Options → AddOns → PetAssist"
+  L.SUBTITLE = "Питомец атакует цель вместе с твоим кастом (Warlock / Hunter)"
+  L.ADDON_DISABLED = "выключен."
+  L.SOFTCC_ON = "SoftCC включён."
+  L.SOFTCC_OFF = "SoftCC выключен."
+  L.STANCE_RESTORE_ON = "Восстановление стойки включено."
+  L.STANCE_RESTORE_OFF = "Восстановление стойки выключено."
+  L.MODE_CHANGED = "режим → %s"
+  L.USAGE_MODE = "Использование: /pa mode all|harm|custom (сейчас: %s)"
+  L.USAGE_BLOCK = "Использование: /pa block ИмяСпелла"
+  L.BLOCK_ADDED = "Добавлено в blacklist. Включи custom: /pa mode custom"
+  L.BLOCKED = "block: %s"
+  L.USAGE_UNBLOCK = "Использование: /pa unblock ИмяСпелла"
+  L.UNBLOCKED = "unblock: %s"
+  L.RECALL_BIND_USAGE = "Recall бинд сброшен. Назначить: /pa recall SHIFT-F"
+  L.RECALL_BOUND = "Recall → %s (/petpassive + /petfollow)"
+  L.TEST_OUTPUT = "v%s | on=%s | mode=%s | softCC=%s | restore=%s | proxy=%d | wrap=%d | keyDown=%s | lockdown=%s | recall=%s"
+  L.TEST_BUTTON_ACTION = "ActionButton1 action=%s macro:\n%s"
+  L.TEST_NO_PROXY = "ActionButton1 proxy ещё нет — /petassist refresh"
+  L.STATUS_OUTPUT = "%s | %s | SoftCC %s | stance restore %s"
+  L.STATUS_ENABLED = "включён v%s"
+  L.STATUS_DISABLED = "выключен"
+  L.SLASH_HELP = "Команды: on|off|refresh|test|status|config|mode|softcc|stance|block|unblock|recall"
+  L.SLASH_MODE_STATUS = "Режим: %s | SoftCC: %s | Восстановление стойки: %s"
+  L.UNKNOWN_COMMAND = "Неизвестная команда. /pa help"
+  L.CANNOT_BIND_COMBAT = "нельзя менять бинд в бою."
+  L.SOFTCC_TOGGLE = "SoftCC → %s"
+  L.SOFTCC_ON_DESC = "on (Fear/Banish отзывают пета)"
+  L.SOFTCC_OFF_DESC = "off"
+  L.STANCE_TOGGLE = "Восстановление стойки → %s"
+  L.CLASS_NOT_SUPPORTED = "PetAssist: только для Охотника и Чернокнижника."
+end
+
 local defaults = {
   enabled = true,
-  mode = MODE_HARM, -- all | harm | custom
-  softCC = true,    -- on Fear/Banish/… pull pet back (passive+follow)
-  blacklist = {},   -- [lowerSpellName] = true (custom mode)
-  recallKey = nil,  -- e.g. "SHIFT-F"
+  mode = MODE_HARM,       -- all | harm | custom
+  softCC = true,          -- on Fear/Banish/… pull pet back (passive+follow)
+  restoreStance = true,   -- restore pet stance (e.g. /petdefensive) before /petattack on normal spells
+  softCCHowl = false,     -- include Howl of Terror in SoftCC (opt-in)
+  softCCFrostTrap = false,-- include Frost Trap in SoftCC (opt-in)
+  blacklist = {},         -- [lowerSpellName] = true (custom mode)
+  recallKey = nil,        -- e.g. "SHIFT-F"
 }
 
 -- Classic Era: CC / utility that should not send the pet (localized via GetSpellInfo).
@@ -45,7 +162,6 @@ local BLOCK_SPELL_IDS = {
   5484, 17928,                -- Howl of Terror
   6789, 17925, 17926,         -- Death Coil
   1098, 11725, 11726,         -- Enslave Demon
-  6358,                       -- Seduction (if on action bar)
   126,                        -- Eye of Kilrogg
   1122,                       -- Inferno
   698,                        -- Ritual of Summoning
@@ -66,6 +182,12 @@ local BLOCK_SPELL_IDS = {
   693, 20752, 20755, 20756, 20757, -- Create Soulstone
   6366, 17951, 17952, 17953,  -- Create Firestone
   2362, 17727, 17728,         -- Create Spellstone
+  -- Warlock demon summons
+  688,                        -- Summon Imp
+  697,                        -- Summon Voidwalker
+  712,                        -- Summon Succubus
+  691,                        -- Summon Felhunter
+  30146,                      -- Summon Felguard (TBC, but keeping for compatibility)
   -- Hunter CC / utility
   5384,                       -- Feign Death
   1002,                       -- Eyes of the Beast
@@ -84,21 +206,49 @@ local BLOCK_SPELL_IDS = {
   982,                        -- Revive Pet
   6991,                       -- Feed Pet
   136, 3111, 3661, 3662, 13542, 13543, 13544, -- Mend Pet
+  -- Hunter Aspects
+  13165,                      -- Aspect of the Hawk
+  14318, 14319, 14320, 14321, 14322, 25296, -- Aspect of the Hawk ranks
+  5118,                       -- Aspect of the Cheetah
+  13159,                      -- Aspect of the Pack
+  20043,                      -- Aspect of the Wild
+  20190,                      -- Aspect of the Wild rank 2
+  -- Hunter Tracking
+  1494,                       -- Track Beasts
+  19878,                      -- Track Demons
+  19879,                      -- Track Dragonkin
+  19880,                      -- Track Elementals
+  19882,                      -- Track Giants
+  19883,                      -- Track Humanoids
+  19884,                      -- Track Undead
+  19885,                      -- Track Hidden
+  -- Hunter other utility
+  19506,                      -- Trueshot Aura
+  3045,                       -- Rapid Fire
+  19263,                      -- Deterrence
+  781,                        -- Disengage
 }
 
 -- Spells where the pet must STOP (SoftCC Guard): passive + follow with the cast.
+-- Note: Howl of Terror and Frost Trap are opt-in via settings; Seduction removed (pet's own spell).
 local SOFTCC_SPELL_IDS = {
   5782, 6213, 6215,           -- Fear
   710, 18647,                 -- Banish
-  5484, 17928,                -- Howl of Terror
   6789, 17925, 17926,         -- Death Coil
   1098, 11725, 11726,         -- Enslave Demon
-  6358,                       -- Seduction
   1513, 14326, 14327,         -- Scare Beast
   1499, 14310, 14311,         -- Freezing Trap
-  13809,                      -- Frost Trap
   19386, 24132, 24133,        -- Wyvern Sting
   19503,                      -- Scatter Shot
+}
+
+-- Opt-in SoftCC spells (controlled by settings)
+local SOFTCC_HOWL_IDS = {
+  5484, 17928,                -- Howl of Terror
+}
+
+local SOFTCC_FROST_TRAP_IDS = {
+  13809,                      -- Frost Trap
 }
 
 local BARS = {
@@ -157,6 +307,12 @@ local softCcNames = {}
 local pendingRefresh = false
 local optionsFrame
 local settingsCategory -- Settings API category (Classic Era Options → AddOns)
+local playerClass
+local isHunterOrWarlock = false
+local hasShownClassWarning = false
+local firstLogin = true
+local refreshDebounceTimer
+local eventDebounceTimer
 
 -- PreClick: pa_allow 1 = petattack, 2 = SoftCC (passive+follow)
 local PRECLICK_PET = [[
@@ -240,6 +396,26 @@ local function RebuildBlockedNames()
     if name then
       softCcNames[name] = true
       softCcNames[name:lower()] = true
+    end
+  end
+  -- Add opt-in SoftCC spells if enabled
+  local db = DB()
+  if db.softCCHowl then
+    for _, spellId in ipairs(SOFTCC_HOWL_IDS) do
+      local name = SpellName(spellId)
+      if name then
+        softCcNames[name] = true
+        softCcNames[name:lower()] = true
+      end
+    end
+  end
+  if db.softCCFrostTrap then
+    for _, spellId in ipairs(SOFTCC_FROST_TRAP_IDS) do
+      local name = SpellName(spellId)
+      if name then
+        softCcNames[name] = true
+        softCcNames[name:lower()] = true
+      end
     end
   end
 end
@@ -390,6 +566,42 @@ local function SlotFromButton(btn)
   return btn:GetAttribute("action") or btn.action
 end
 
+local function GetSpellWithRank(spellId, name)
+  if not name then
+    return nil
+  end
+  
+  -- Try to get rank from GetSpellSubtext (Classic Era API)
+  local subtext = GetSpellSubtext and GetSpellSubtext(spellId)
+  if subtext and subtext ~= "" then
+    -- subtext is usually "Rank N" or localized equivalent
+    return name .. "(" .. subtext .. ")"
+  end
+  
+  -- Fallback: scan spellbook to find the rank placed on the bar
+  -- This is necessary because the action bar may have a downranked spell
+  local i = 1
+  while true do
+    local spellName, spellRank = GetSpellBookItemName(i, BOOKTYPE_SPELL)
+    if not spellName then
+      break
+    end
+    if spellName == name then
+      local spellBookId = GetSpellBookItemInfo(i, BOOKTYPE_SPELL)
+      if spellBookId == spellId then
+        if spellRank and spellRank ~= "" then
+          return name .. "(" .. spellRank .. ")"
+        else
+          return name
+        end
+      end
+    end
+    i = i + 1
+  end
+  
+  return name
+end
+
 local function BuildMacroText(slot, action)
   if not slot then
     return nil
@@ -401,8 +613,15 @@ local function BuildMacroText(slot, action)
   end
 
   local prefix = ""
+  local db = DB()
+  
   if action == PA_ASSIST then
-    prefix = PET .. "\n"
+    -- Add stance restoration if enabled
+    if db.restoreStance then
+      prefix = "/petdefensive [pet,nomod]\n" .. PET .. "\n"
+    else
+      prefix = PET .. "\n"
+    end
   elseif action == PA_SOFTCC then
     prefix = SOFTCC .. "\n"
   end
@@ -426,7 +645,10 @@ local function BuildMacroText(slot, action)
     if action == PA_NONE then
       return nil -- leave native button
     end
-    return prefix .. "/cast " .. name
+    
+    -- Get spell with correct rank
+    local spellWithRank = GetSpellWithRank(id, name)
+    return prefix .. "/cast " .. spellWithRank
   elseif actionType == "item" then
     if action == PA_NONE then
       return nil
@@ -577,6 +799,11 @@ local function Apply()
     pendingRefresh = true
     return false
   end
+  
+  -- Class gate: only work for Hunter and Warlock
+  if not isHunterOrWarlock then
+    return true, 0, 0, 0
+  end
 
   RebuildBlockedNames()
   ClearOverrideBindings(binder)
@@ -625,19 +852,47 @@ local function Apply()
 end
 
 local function Refresh(quiet)
+  -- Cancel any pending debounced refresh
+  if refreshDebounceTimer then
+    refreshDebounceTimer:Cancel()
+    refreshDebounceTimer = nil
+  end
+  
   if InCombatLockdown() then
     pendingRefresh = true
-    Print("обновление после боя…")
+    if not quiet then
+      Print(L.REFRESH_AFTER_COMBAT)
+    end
     return
   end
+  
+  -- Class gate check
+  if not isHunterOrWarlock then
+    if not hasShownClassWarning then
+      Print(L.CLASS_NOT_SUPPORTED)
+      hasShownClassWarning = true
+    end
+    return
+  end
+  
   pendingRefresh = false
   local ok, proxiesN, keysN, extraN = Apply()
   if ok and DB().enabled and not quiet then
     Print(string.format(
-      "v%s готов [%s]: proxy %d, клавиш %d, extra %d.",
+      L.ADDON_READY,
       VERSION, DB().mode or MODE_HARM, proxiesN or 0, keysN or 0, extraN or 0
     ))
   end
+end
+
+local function DebouncedRefresh()
+  if refreshDebounceTimer then
+    refreshDebounceTimer:Cancel()
+  end
+  refreshDebounceTimer = C_Timer.NewTimer(0.1, function()
+    refreshDebounceTimer = nil
+    Refresh(true)
+  end)
 end
 
 -- ---------------------------------------------------------------------------
@@ -646,11 +901,11 @@ end
 
 local function ModeLabel(mode)
   if mode == MODE_ALL then
-    return "all — пет на КАЖДУЮ кнопку (включая Fear)"
+    return L.MODE_ALL_DESC
   elseif mode == MODE_CUSTOM then
-    return "custom — пет всегда, кроме /pa block"
+    return L.MODE_CUSTOM_DESC
   end
-  return "harm — пет на урон/DoT, НЕ на Fear/камни/баффы"
+  return L.MODE_HARM_DESC
 end
 
 local function RefreshOptionsUI()
@@ -662,23 +917,26 @@ local function RefreshOptionsUI()
   if optionsFrame.softCcCheck then
     optionsFrame.softCcCheck:SetChecked(db.softCC ~= false)
   end
-  optionsFrame.modeText:SetText("Режим: " .. ModeLabel(db.mode))
+  if optionsFrame.restoreStanceCheck then
+    optionsFrame.restoreStanceCheck:SetChecked(db.restoreStance ~= false)
+  end
+  optionsFrame.modeText:SetText(L.MODE_LABEL .. " " .. ModeLabel(db.mode))
   if optionsFrame.modeHint then
     if db.mode == MODE_ALL then
-      optionsFrame.modeHint:SetText("Пет полетит даже от Life Tap / камней. SoftCC всё равно отзовёт на Fear.")
+      optionsFrame.modeHint:SetText(L.MODE_ALL_HINT)
     elseif db.mode == MODE_CUSTOM then
-      optionsFrame.modeHint:SetText("Свой список: /pa block Имя  |  /pa unblock Имя")
+      optionsFrame.modeHint:SetText(L.MODE_CUSTOM_HINT)
     else
-      optionsFrame.modeHint:SetText("Corruption, курсы, SB — да. Fear/Banish — SoftCC (passive+follow). Камни — нет.")
+      optionsFrame.modeHint:SetText(L.MODE_HARM_HINT)
     end
   end
-  optionsFrame.recallText:SetText("Recall (отзыв пета): " .. (db.recallKey or "|cff888888не назначен|r"))
+  optionsFrame.recallText:SetText(L.RECALL_LABEL .. " " .. (db.recallKey or ("|cff888888" .. L.RECALL_UNBOUND .. "|r")))
   local blCount = 0
   for _ in pairs(db.blacklist) do
     blCount = blCount + 1
   end
   optionsFrame.blText:SetText(string.format(
-    "Custom blacklist: %d имён (только для режима custom)",
+    L.CUSTOM_BLACKLIST,
     blCount
   ))
 end
@@ -699,13 +957,13 @@ local function CreateOptions()
 
   local sub = f:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
   sub:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -6)
-  sub:SetText("Питомец атакует цель вместе с твоим кастом (Warlock / Hunter)")
+  sub:SetText(L.SUBTITLE)
 
   local enableCheck = CreateFrame("CheckButton", "PetAssistEnableCheck", f, "UICheckButtonTemplate")
   enableCheck:SetPoint("TOPLEFT", sub, "BOTTOMLEFT", -4, -16)
   local enableLabel = _G["PetAssistEnableCheckText"]
   if enableLabel then
-    enableLabel:SetText("Включён")
+    enableLabel:SetText(L.ENABLED)
   end
   enableCheck:SetScript("OnClick", function(self)
     DB().enabled = self:GetChecked() and true or false
@@ -719,7 +977,7 @@ local function CreateOptions()
       else
         pendingRefresh = true
       end
-      Print("выключен.")
+      Print(L.ADDON_DISABLED)
     end
     RefreshOptionsUI()
   end)
@@ -729,18 +987,32 @@ local function CreateOptions()
   softCcCheck:SetPoint("TOPLEFT", enableCheck, "BOTTOMLEFT", 0, -4)
   local softCcLabel = _G["PetAssistSoftCcCheckText"]
   if softCcLabel then
-    softCcLabel:SetText("SoftCC Guard — на Fear/Banish отзывать пета (passive+follow)")
+    softCcLabel:SetText(L.SOFTCC_GUARD)
   end
   softCcCheck:SetScript("OnClick", function(self)
     DB().softCC = self:GetChecked() and true or false
     Refresh(false)
-    Print(DB().softCC and "SoftCC включён." or "SoftCC выключен.")
+    Print(DB().softCC and L.SOFTCC_ON or L.SOFTCC_OFF)
     RefreshOptionsUI()
   end)
   f.softCcCheck = softCcCheck
 
+  local restoreStanceCheck = CreateFrame("CheckButton", "PetAssistRestoreStanceCheck", f, "UICheckButtonTemplate")
+  restoreStanceCheck:SetPoint("TOPLEFT", softCcCheck, "BOTTOMLEFT", 0, -4)
+  local restoreStanceLabel = _G["PetAssistRestoreStanceCheckText"]
+  if restoreStanceLabel then
+    restoreStanceLabel:SetText(L.RESTORE_STANCE)
+  end
+  restoreStanceCheck:SetScript("OnClick", function(self)
+    DB().restoreStance = self:GetChecked() and true or false
+    Refresh(false)
+    Print(DB().restoreStance and L.STANCE_RESTORE_ON or L.STANCE_RESTORE_OFF)
+    RefreshOptionsUI()
+  end)
+  f.restoreStanceCheck = restoreStanceCheck
+
   local modeText = f:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-  modeText:SetPoint("TOPLEFT", softCcCheck, "BOTTOMLEFT", 4, -14)
+  modeText:SetPoint("TOPLEFT", restoreStanceCheck, "BOTTOMLEFT", 4, -14)
   modeText:SetWidth(520)
   modeText:SetJustifyH("LEFT")
   f.modeText = modeText
@@ -749,7 +1021,7 @@ local function CreateOptions()
     DB().mode = mode
     Refresh(false)
     RefreshOptionsUI()
-    Print("режим → " .. ModeLabel(mode))
+    Print(string.format(L.MODE_CHANGED, ModeLabel(mode)))
   end
 
   local btnHarm = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
@@ -791,13 +1063,13 @@ local function CreateOptions()
   local bindBtn = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
   bindBtn:SetSize(160, 24)
   bindBtn:SetPoint("TOPLEFT", recallText, "BOTTOMLEFT", 0, -8)
-  bindBtn:SetText("Назначить Recall")
+  bindBtn:SetText(L.BIND_RECALL)
   bindBtn:SetScript("OnClick", function(self)
     if InCombatLockdown() then
-      Print("нельзя менять бинд в бою.")
+      Print(L.CANNOT_BIND_COMBAT)
       return
     end
-    self:SetText("Нажми клавишу…")
+    self:SetText(L.PRESS_KEY)
     local binderFrame = CreateFrame("Frame", nil, f)
     binderFrame:EnableKeyboard(true)
     if binderFrame.SetPropagateKeyboardInput then
@@ -805,7 +1077,7 @@ local function CreateOptions()
     end
     binderFrame:SetScript("OnKeyDown", function(_, key)
       if key == "ESCAPE" then
-        self:SetText("Назначить Recall")
+        self:SetText(L.BIND_RECALL)
         binderFrame:Hide()
         return
       end
@@ -822,8 +1094,8 @@ local function CreateOptions()
       DB().recallKey = binding
       Refresh(true)
       ApplyRecallBinding()
-      self:SetText("Назначить Recall")
-      Print("Recall → " .. binding .. " (/petpassive + /petfollow)")
+      self:SetText(L.BIND_RECALL)
+      Print(string.format(L.RECALL_BOUND, binding))
       RefreshOptionsUI()
       binderFrame:Hide()
     end)
@@ -833,25 +1105,25 @@ local function CreateOptions()
   local clearBind = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
   clearBind:SetSize(100, 24)
   clearBind:SetPoint("LEFT", bindBtn, "RIGHT", 8, 0)
-  clearBind:SetText("Сброс")
+  clearBind:SetText(L.CLEAR)
   clearBind:SetScript("OnClick", function()
     DB().recallKey = nil
     Refresh(true)
-    Print("Recall бинд сброшен.")
+    Print(L.RECALL_CLEARED)
     RefreshOptionsUI()
   end)
 
   local refreshBtn = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
   refreshBtn:SetSize(120, 24)
   refreshBtn:SetPoint("TOPLEFT", bindBtn, "BOTTOMLEFT", 0, -20)
-  refreshBtn:SetText("Refresh")
+  refreshBtn:SetText(L.REFRESH)
   refreshBtn:SetScript("OnClick", function() Refresh(false) end)
 
   local hint = f:CreateFontString(nil, "ARTWORK", "GameFontDisable")
   hint:SetPoint("TOPLEFT", refreshBtn, "BOTTOMLEFT", 0, -20)
   hint:SetWidth(520)
   hint:SetJustifyH("LEFT")
-  hint:SetText("/pa softcc on|off  |  /pa block Fear  |  /pa mode harm\nEsc → Options → AddOns → PetAssist")
+  hint:SetText(L.SLASH_HINT .. "\n" .. L.ESCAPE_OPTIONS)
 
   f:SetScript("OnShow", RefreshOptionsUI)
 
@@ -916,12 +1188,18 @@ eventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
 eventFrame:RegisterEvent("ACTIONBAR_SLOT_CHANGED")
 eventFrame:RegisterEvent("ACTIONBAR_PAGE_CHANGED")
 eventFrame:RegisterEvent("UPDATE_BINDINGS")
+eventFrame:RegisterEvent("UPDATE_MACROS")
 eventFrame:RegisterEvent("CVAR_UPDATE")
 eventFrame:RegisterEvent("UNIT_PET")
 
 eventFrame:SetScript("OnEvent", function(_, event, arg1)
   if event == "ADDON_LOADED" then
     if arg1 == ADDON_NAME then
+      -- Detect class
+      local _, class = UnitClass("player")
+      playerClass = class
+      isHunterOrWarlock = (class == "HUNTER" or class == "WARLOCK")
+      
       DB()
       RebuildBlockedNames()
       RegisterOptionsPanel()
@@ -937,9 +1215,19 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1)
   end
 
   if event == "PLAYER_ENTERING_WORLD" then
+    if not isHunterOrWarlock then
+      if not hasShownClassWarning then
+        Print(L.CLASS_NOT_SUPPORTED)
+        hasShownClassWarning = true
+      end
+      return
+    end
+    
     if DB().enabled then
       C_Timer.After(0.75, function()
-        Refresh(false)
+        -- Only print on first login
+        Refresh(not firstLogin)
+        firstLogin = false
       end)
       -- Late scan for Dominos/ElvUI that load after us
       C_Timer.After(2.5, function()
@@ -952,7 +1240,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1)
   end
 
   if event == "PLAYER_REGEN_ENABLED" then
-    if pendingRefresh or DB().enabled then
+    if pendingRefresh then
       Refresh(true)
     end
     return
@@ -962,7 +1250,17 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1)
     return
   end
 
-  if not DB().enabled then
+  if not DB().enabled or not isHunterOrWarlock then
+    return
+  end
+
+  -- Debounce rapid action bar events
+  if event == "ACTIONBAR_SLOT_CHANGED" or event == "ACTIONBAR_PAGE_CHANGED" or event == "UPDATE_MACROS" then
+    if InCombatLockdown() then
+      pendingRefresh = true
+      return
+    end
+    DebouncedRefresh()
     return
   end
 
@@ -988,8 +1286,11 @@ SlashCmdList.PETASSIST = function(msg)
   rest = rest or ""
 
   if cmd == "" or cmd == "help" or cmd == "помощь" then
-    Print("Команды: on|off|refresh|test|status|config|mode|softcc|block|unblock|recall")
-    Print("Режим: " .. ModeLabel(db.mode) .. " | SoftCC: " .. (db.softCC ~= false and "on" or "off"))
+    Print(L.SLASH_HELP)
+    Print(string.format(L.SLASH_MODE_STATUS, 
+      ModeLabel(db.mode),
+      (db.softCC ~= false and "on" or "off"),
+      (db.restoreStance ~= false and "on" or "off")))
   elseif cmd == "on" or cmd == "вкл" then
     db.enabled = true
     Refresh(false)
@@ -1002,7 +1303,7 @@ SlashCmdList.PETASSIST = function(msg)
     else
       pendingRefresh = true
     end
-    Print("выключен.")
+    Print(L.ADDON_DISABLED)
   elseif cmd == "refresh" or cmd == "rewrap" or cmd == "обновить" then
     Refresh(false)
   elseif cmd == "config" or cmd == "options" or cmd == "настройки" then
@@ -1017,46 +1318,57 @@ SlashCmdList.PETASSIST = function(msg)
       db.softCC = not (db.softCC ~= false)
     end
     Refresh(false)
-    Print("SoftCC → " .. (db.softCC and "on (Fear/Banish отзывают пета)" or "off"))
+    Print(string.format(L.SOFTCC_TOGGLE, db.softCC and L.SOFTCC_ON_DESC or L.SOFTCC_OFF_DESC))
+  elseif cmd == "stance" or cmd == "стойка" then
+    local m = rest:lower()
+    if m == "on" or m == "вкл" or m == "1" then
+      db.restoreStance = true
+    elseif m == "off" or m == "выкл" or m == "0" then
+      db.restoreStance = false
+    else
+      db.restoreStance = not (db.restoreStance ~= false)
+    end
+    Refresh(false)
+    Print(string.format(L.STANCE_TOGGLE, db.restoreStance and "on" or "off"))
   elseif cmd == "mode" or cmd == "режим" then
     local m = rest:lower()
     if m == MODE_ALL or m == MODE_HARM or m == MODE_CUSTOM then
       db.mode = m
       Refresh(false)
-      Print("режим → " .. ModeLabel(m))
+      Print(string.format(L.MODE_CHANGED, ModeLabel(m)))
     else
-      Print("Использование: /pa mode all|harm|custom (сейчас: " .. tostring(db.mode) .. ")")
+      Print(string.format(L.USAGE_MODE, tostring(db.mode)))
     end
   elseif cmd == "block" or cmd == "блок" then
     if rest == "" then
-      Print("Использование: /pa block ИмяСпелла")
+      Print(L.USAGE_BLOCK)
       return
     end
     db.blacklist[rest] = true
     db.blacklist[rest:lower()] = true
     if db.mode ~= MODE_CUSTOM then
-      Print("Добавлено в blacklist. Включи custom: /pa mode custom")
+      Print(L.BLOCK_ADDED)
     end
     Refresh(true)
-    Print("block: " .. rest)
+    Print(string.format(L.BLOCKED, rest))
   elseif cmd == "unblock" or cmd == "разблок" then
     if rest == "" then
-      Print("Использование: /pa unblock ИмяСпелла")
+      Print(L.USAGE_UNBLOCK)
       return
     end
     db.blacklist[rest] = nil
     db.blacklist[rest:lower()] = nil
     Refresh(true)
-    Print("unblock: " .. rest)
+    Print(string.format(L.UNBLOCKED, rest))
   elseif cmd == "recall" or cmd == "отзыв" then
     if rest == "" or rest:lower() == "clear" or rest:lower() == "сброс" then
       db.recallKey = nil
       Refresh(true)
-      Print("Recall бинд сброшен. Назначить: /pa recall SHIFT-F")
+      Print(L.RECALL_BIND_USAGE)
     else
       db.recallKey = rest:upper():gsub("%s+", "")
       Refresh(true)
-      Print("Recall → " .. db.recallKey)
+      Print(string.format(L.RECALL_BOUND, db.recallKey))
     end
   elseif cmd == "test" or cmd == "тест" then
     local nProxy, nWrap = 0, 0
@@ -1068,21 +1380,25 @@ SlashCmdList.PETASSIST = function(msg)
     end
     local p = proxies["ActionButton1"]
     Print(string.format(
-      "v%s | on=%s | mode=%s | softCC=%s | proxy=%d | wrap=%d | keyDown=%s | lockdown=%s | recall=%s",
+      L.TEST_OUTPUT,
       VERSION, tostring(db.enabled), tostring(db.mode), tostring(db.softCC ~= false),
+      tostring(db.restoreStance ~= false),
       nProxy, nWrap, tostring(UseKeyDown()), tostring(InCombatLockdown()), tostring(db.recallKey)
     ))
     if p then
       local actionName = ({ [0] = "none", [1] = "assist", [2] = "softcc" })[p.paAction or 0] or "?"
-      Print("ActionButton1 action=" .. actionName .. " macro:\n" .. tostring(p.paMacro or p:GetAttribute("macrotext")))
+      Print(string.format(L.TEST_BUTTON_ACTION, actionName, tostring(p.paMacro or p:GetAttribute("macrotext"))))
     else
-      Print("ActionButton1 proxy ещё нет — /petassist refresh")
+      Print(L.TEST_NO_PROXY)
     end
   elseif cmd == "status" or cmd == "статус" then
-    Print((db.enabled and ("включён v" .. VERSION) or "выключен")
-      .. " | " .. ModeLabel(db.mode)
-      .. " | SoftCC " .. (db.softCC ~= false and "on" or "off"))
+    local statusText = db.enabled and string.format(L.STATUS_ENABLED, VERSION) or L.STATUS_DISABLED
+    Print(string.format(L.STATUS_OUTPUT,
+      statusText,
+      ModeLabel(db.mode),
+      (db.softCC ~= false and "on" or "off"),
+      (db.restoreStance ~= false and "on" or "off")))
   else
-    Print("Неизвестная команда. /pa help")
+    Print(L.UNKNOWN_COMMAND)
   end
 end

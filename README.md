@@ -20,7 +20,7 @@ In Classic, a pet on **Defensive** only joins after you (or the pet) take damage
 
 ### SoftCC Guard
 
-On Fear, Banish, Howl of Terror, Death Coil, Enslave Demon, Seduction, Scare Beast, Freezing/Frost Trap, Wyvern Sting, Scatter Shot the addon runs:
+On Fear, Banish, Death Coil, Enslave Demon, Scare Beast, Freezing Trap, Wyvern Sting, Scatter Shot the addon runs:
 
 ```
 /petpassive
@@ -32,6 +32,22 @@ So the pet stops hitting and does not break your CC. The next damage spell sends
 
 Toggle: options checkbox or `/pa softcc on|off` (default **on**).
 
+**Note:** Howl of Terror and Frost Trap are opt-in (not default SoftCC). Seduction was removed from SoftCC (pet's own spell).
+
+### Stance Restoration
+
+When enabled (default **on**), normal assist spells automatically restore pet stance before attacking:
+
+```
+/petdefensive [pet,nomod]
+/petattack [pet,@target,harm,nodead]
+/cast …
+```
+
+This ensures your pet returns to a proper stance (e.g. Defensive) after SoftCC puts it on Passive.
+
+Toggle: options checkbox or `/pa stance on|off`.
+
 ### Commands
 
 | Command | Effect |
@@ -41,13 +57,14 @@ Toggle: options checkbox or `/pa softcc on|off` (default **on**).
 | `/pa refresh` | rebuild binds (out of combat) |
 | `/pa config` | Esc → Options → AddOns → PetAssist |
 | `/pa softcc on\|off` | SoftCC Guard (recall pet on Fear/Banish) |
+| `/pa stance on\|off` | Stance restoration (restore /petdefensive before /petattack) |
 | `/pa mode all\|harm\|custom` | when to send the pet |
 | `/pa block SpellName` | add to custom blacklist |
 | `/pa unblock SpellName` | remove from custom blacklist |
 | `/pa recall SHIFT-F` | bind Recall (`/petpassive` + `/petfollow`) |
 | `/pa recall clear` | clear Recall bind |
-| `/pa test` | debug status |
-| `/pa status` | on/off + mode |
+| `/pa test` | debug status (includes stance restore state) |
+| `/pa status` | on/off + mode + stance restore |
 
 ### Modes
 
@@ -68,8 +85,10 @@ Bind a key (options UI or `/pa recall KEY`) to pull the pet back: Passive + Foll
 
 ## Notes
 
+- **Hunter and Warlock only:** The addon only activates for these two pet classes; shows a quiet message on other classes
 - `/petattack` uses `[pet,@target,harm,nodead]` — no pet / friendly / dead target → no-op
 - Casting Fear etc. in **harm** mode does not send the pet
+- **Rank-correct casts:** Downranked spells on your bar cast the exact rank placed, not max rank
 
 ## Support
 

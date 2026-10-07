@@ -1,5 +1,35 @@
 # Changelog
 
+## 1.5.0
+
+### Features
+- **Rank-correct casts:** Downranked spells on the action bar now cast the exact rank placed on the bar, not max rank
+- **Restore pet stance after SoftCC:** New option (default ON) to restore pet stance (e.g. `/petdefensive`) before `/petattack` on normal spells after using SoftCC abilities
+- **Class gate:** Addon now only activates for Hunter and Warlock; shows a single quiet message on other classes
+- **Localization:** All user-facing strings now support English (default) and Russian (ruRU) via locale table
+
+### Spell List Improvements
+- **Added missing Hunter spells to block list:**
+  - All Aspects (Hawk, Cheetah, Pack, Wild)
+  - All Tracking abilities
+  - Trueshot Aura, Rapid Fire, Deterrence, Disengage
+  - Demon summons for Warlock
+  - All Detect Invisibility ranks
+- **SoftCC changes:**
+  - Removed Seduction (pet's own spell; `/petfollow` interrupts it)
+  - Howl of Terror and Frost Trap now opt-in via settings (not default)
+
+### Performance & UX
+- **Event debouncing:** `ACTIONBAR_SLOT_CHANGED` and similar events now debounced into one refresh (100ms delay)
+- **UPDATE_MACROS registered:** Edited macros now automatically picked up
+- **Reduced print noise:** Only prints on first login or explicit `/pa refresh`, not every world enter
+- **Skip unnecessary post-combat refresh:** Only refreshes when `pendingRefresh` flag is set
+
+### Commands
+- New: `/pa stance on|off` — toggle stance restoration
+- Updated: `/pa test` now shows stance restore status
+- Updated: `/pa status` includes stance restore state
+
 ## 1.4.0
 
 - **SoftCC Guard:** Fear / Banish / Howl / Death Coil / Enslave / traps / Scare Beast → `/petpassive` + `/petfollow` with the cast (pet stops breaking CC)
