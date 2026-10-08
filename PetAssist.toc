@@ -1,7 +1,16 @@
 ## Interface: 11509
 ## Title: PetAssist
 ## Notes: Pet attacks on cast; SoftCC pulls pet on Fear/Banish (Warlock/Hunter).
+## Notes-deDE: Begleiter greift beim Zaubern an; SoftCC ruft Begleiter bei Furcht/Verbannung zurück (Hexenmeister/Jäger).
+## Notes-esES: La mascota ataca al lanzar; SoftCC recuerda mascota en Miedo/Destierro (Brujo/Cazador).
+## Notes-esMX: La mascota ataca al lanzar; SoftCC recuerda mascota en Miedo/Destierro (Brujo/Cazador).
+## Notes-frFR: Le familier attaque au lancement ; SoftCC rappelle le familier sur Peur/Bannissement (Démoniste/Chasseur).
+## Notes-itIT: La mascotte attacca al lancio; SoftCC richiama la mascotte su Paura/Esilio (Stregone/Cacciatore).
+## Notes-ptBR: A mascote ataca ao lançar; SoftCC chama a mascote em Medo/Banimento (Bruxo/Caçador).
 ## Notes-ruRU: Пет атакует с кастом; SoftCC отзывает пета на Fear/Banish.
+## Notes-koKR: 시전 시 소환수가 공격; SoftCC가 공포/추방 시 소환수를 회수 (흑마법사/사냥꾼).
+## Notes-zhCN: 施法时宠物攻击；SoftCC在恐惧/放逐时召回宠物（术士/猎人）。
+## Notes-zhTW: 施法時寵物攻擊；SoftCC在恐懼/放逐時召回寵物（術士/獵人）。
 ## Author: Artem
 ## Version: @project-version@
 ## IconTexture: Interface\AddOns\PetAssist\icon

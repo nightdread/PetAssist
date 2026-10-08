@@ -1,5 +1,5 @@
 --[[
-  PetAssist 1.5.0 — Classic Era
+  PetAssist 1.5.1 — Classic Era
 
   PetAttack() is forbidden from addon code. Keybinds are overridden to secure
   proxy buttons whose macrotext is:
@@ -17,7 +17,7 @@ local ADDON_NAME = ...
 local VERSION = "@project-version@"
 -- Unpackaged working copy (placeholder not replaced by packager)
 if VERSION:find("@", 1, true) then
-  VERSION = "1.5.0-dev"
+  VERSION = "1.5.1-dev"
 end
 
 local MODE_ALL = "all"
@@ -30,118 +30,440 @@ local PA_ASSIST = 1
 local PA_SOFTCC = 2
 
 -- ===== Localization =====
+-- This structure can be extracted to a separate file for CurseForge localization system.
+-- All locales fall back to English (enUS) for missing strings.
 local L = {}
 local locale = GetLocale()
 
--- Default English strings
-L.ENABLED = "Enabled"
-L.ADDON_READY = "v%s ready [%s]: proxy %d, keys %d, extra %d."
-L.REFRESH_AFTER_COMBAT = "refresh after combat…"
-L.SOFTCC_GUARD = "SoftCC Guard — recall pet on Fear/Banish (passive+follow)"
-L.RESTORE_STANCE = "Restore pet stance after SoftCC (e.g. /petdefensive before /petattack)"
-L.MODE_ALL_DESC = "all — pet on EVERY button (including Fear)"
-L.MODE_CUSTOM_DESC = "custom — pet always, except /pa block"
-L.MODE_HARM_DESC = "harm — pet on damage/DoTs, NOT on Fear/stones/buffs"
-L.MODE_LABEL = "Mode:"
-L.MODE_ALL_HINT = "Pet goes even on Life Tap / stones. SoftCC still recalls on Fear."
-L.MODE_CUSTOM_HINT = "Custom list: /pa block Name  |  /pa unblock Name"
-L.MODE_HARM_HINT = "Corruption, curses, SB — yes. Fear/Banish — SoftCC (passive+follow). Stones — no."
-L.RECALL_LABEL = "Recall (pet recall):"
-L.RECALL_UNBOUND = "not bound"
-L.CUSTOM_BLACKLIST = "Custom blacklist: %d names (custom mode only)"
-L.BIND_RECALL = "Bind Recall"
-L.PRESS_KEY = "Press a key…"
-L.CLEAR = "Clear"
-L.RECALL_CLEARED = "Recall bind cleared."
-L.REFRESH = "Refresh"
-L.SLASH_HINT = "/pa softcc on|off  |  /pa block Fear  |  /pa mode harm"
-L.ESCAPE_OPTIONS = "Esc → Options → AddOns → PetAssist"
-L.SUBTITLE = "Pet attacks your target with your cast (Warlock / Hunter)"
-L.ADDON_DISABLED = "disabled."
-L.SOFTCC_ON = "SoftCC enabled."
-L.SOFTCC_OFF = "SoftCC disabled."
-L.STANCE_RESTORE_ON = "Stance restore enabled."
-L.STANCE_RESTORE_OFF = "Stance restore disabled."
-L.MODE_CHANGED = "mode → %s"
-L.USAGE_MODE = "Usage: /pa mode all|harm|custom (current: %s)"
-L.USAGE_BLOCK = "Usage: /pa block SpellName"
-L.BLOCK_ADDED = "Added to blacklist. Enable custom: /pa mode custom"
-L.BLOCKED = "block: %s"
-L.USAGE_UNBLOCK = "Usage: /pa unblock SpellName"
-L.UNBLOCKED = "unblock: %s"
-L.RECALL_BIND_USAGE = "Recall bind cleared. To bind: /pa recall SHIFT-F"
-L.RECALL_BOUND = "Recall → %s (/petpassive + /petfollow)"
-L.TEST_OUTPUT = "v%s | on=%s | mode=%s | softCC=%s | restore=%s | proxy=%d | wrap=%d | keyDown=%s | lockdown=%s | recall=%s"
-L.TEST_BUTTON_ACTION = "ActionButton1 action=%s macro:\n%s"
-L.TEST_NO_PROXY = "ActionButton1 proxy not yet created — /petassist refresh"
-L.STATUS_OUTPUT = "%s | %s | SoftCC %s | stance restore %s"
-L.STATUS_ENABLED = "enabled v%s"
-L.STATUS_DISABLED = "disabled"
-L.SLASH_HELP = "Commands: on|off|refresh|test|status|config|mode|softcc|stance|block|unblock|recall"
-L.SLASH_MODE_STATUS = "Mode: %s | SoftCC: %s | Stance restore: %s"
-L.UNKNOWN_COMMAND = "Unknown command. /pa help"
-L.CANNOT_BIND_COMBAT = "cannot change bind in combat."
-L.SOFTCC_TOGGLE = "SoftCC → %s"
-L.SOFTCC_ON_DESC = "on (Fear/Banish recall pet)"
-L.SOFTCC_OFF_DESC = "off"
-L.STANCE_TOGGLE = "Stance restore → %s"
-L.CLASS_NOT_SUPPORTED = "PetAssist: only for Hunter and Warlock."
-
--- Russian (ruRU)
-if locale == "ruRU" then
-  L.ENABLED = "Включён"
-  L.ADDON_READY = "v%s готов [%s]: proxy %d, клавиш %d, extra %d."
-  L.REFRESH_AFTER_COMBAT = "обновление после боя…"
-  L.SOFTCC_GUARD = "SoftCC Guard — на Fear/Banish отзывать пета (passive+follow)"
-  L.RESTORE_STANCE = "Восстановить стойку пета после SoftCC (например, /petdefensive перед /petattack)"
-  L.MODE_ALL_DESC = "all — пет на КАЖДУЮ кнопку (включая Fear)"
-  L.MODE_CUSTOM_DESC = "custom — пет всегда, кроме /pa block"
-  L.MODE_HARM_DESC = "harm — пет на урон/DoT, НЕ на Fear/камни/баффы"
-  L.MODE_LABEL = "Режим:"
-  L.MODE_ALL_HINT = "Пет полетит даже от Life Tap / камней. SoftCC всё равно отзовёт на Fear."
-  L.MODE_CUSTOM_HINT = "Свой список: /pa block Имя  |  /pa unblock Имя"
-  L.MODE_HARM_HINT = "Corruption, курсы, SB — да. Fear/Banish — SoftCC (passive+follow). Камни — нет."
-  L.RECALL_LABEL = "Recall (отзыв пета):"
-  L.RECALL_UNBOUND = "не назначен"
-  L.CUSTOM_BLACKLIST = "Custom blacklist: %d имён (только для режима custom)"
-  L.BIND_RECALL = "Назначить Recall"
-  L.PRESS_KEY = "Нажми клавишу…"
-  L.CLEAR = "Сброс"
-  L.RECALL_CLEARED = "Recall бинд сброшен."
-  L.REFRESH = "Refresh"
-  L.SLASH_HINT = "/pa softcc on|off  |  /pa block Fear  |  /pa mode harm"
-  L.ESCAPE_OPTIONS = "Esc → Options → AddOns → PetAssist"
-  L.SUBTITLE = "Питомец атакует цель вместе с твоим кастом (Warlock / Hunter)"
-  L.ADDON_DISABLED = "выключен."
-  L.SOFTCC_ON = "SoftCC включён."
-  L.SOFTCC_OFF = "SoftCC выключен."
-  L.STANCE_RESTORE_ON = "Восстановление стойки включено."
-  L.STANCE_RESTORE_OFF = "Восстановление стойки выключено."
-  L.MODE_CHANGED = "режим → %s"
-  L.USAGE_MODE = "Использование: /pa mode all|harm|custom (сейчас: %s)"
-  L.USAGE_BLOCK = "Использование: /pa block ИмяСпелла"
-  L.BLOCK_ADDED = "Добавлено в blacklist. Включи custom: /pa mode custom"
-  L.BLOCKED = "block: %s"
-  L.USAGE_UNBLOCK = "Использование: /pa unblock ИмяСпелла"
-  L.UNBLOCKED = "unblock: %s"
-  L.RECALL_BIND_USAGE = "Recall бинд сброшен. Назначить: /pa recall SHIFT-F"
-  L.RECALL_BOUND = "Recall → %s (/petpassive + /petfollow)"
-  L.TEST_OUTPUT = "v%s | on=%s | mode=%s | softCC=%s | restore=%s | proxy=%d | wrap=%d | keyDown=%s | lockdown=%s | recall=%s"
-  L.TEST_BUTTON_ACTION = "ActionButton1 action=%s macro:\n%s"
-  L.TEST_NO_PROXY = "ActionButton1 proxy ещё нет — /petassist refresh"
-  L.STATUS_OUTPUT = "%s | %s | SoftCC %s | stance restore %s"
-  L.STATUS_ENABLED = "включён v%s"
-  L.STATUS_DISABLED = "выключен"
-  L.SLASH_HELP = "Команды: on|off|refresh|test|status|config|mode|softcc|stance|block|unblock|recall"
-  L.SLASH_MODE_STATUS = "Режим: %s | SoftCC: %s | Восстановление стойки: %s"
-  L.UNKNOWN_COMMAND = "Неизвестная команда. /pa help"
-  L.CANNOT_BIND_COMBAT = "нельзя менять бинд в бою."
-  L.SOFTCC_TOGGLE = "SoftCC → %s"
-  L.SOFTCC_ON_DESC = "on (Fear/Banish отзывают пета)"
-  L.SOFTCC_OFF_DESC = "off"
-  L.STANCE_TOGGLE = "Восстановление стойки → %s"
-  L.CLASS_NOT_SUPPORTED = "PetAssist: только для Охотника и Чернокнижника."
+-- Locale table builder with fallback
+local function BuildLocale(translations)
+  for key, value in pairs(translations.enUS) do
+    L[key] = value
+  end
+  
+  if translations[locale] then
+    for key, value in pairs(translations[locale]) do
+      L[key] = value
+    end
+  end
 end
+
+-- Localization strings: enUS is default/fallback, all other locales override only what they define
+local TRANSLATIONS = {
+  enUS = {
+    ENABLED = "Enabled",
+    ADDON_READY = "v%s ready [%s]: proxy %d, keys %d, extra %d.",
+    REFRESH_AFTER_COMBAT = "refresh after combat…",
+    SOFTCC_GUARD = "SoftCC Guard — recall pet on Fear/Banish (passive+follow)",
+    RESTORE_STANCE = "Restore pet stance after SoftCC (e.g. /petdefensive before /petattack)",
+    MODE_ALL_DESC = "all — pet on EVERY button (including Fear)",
+    MODE_CUSTOM_DESC = "custom — pet always, except /pa block",
+    MODE_HARM_DESC = "harm — pet on damage/DoTs, NOT on Fear/stones/buffs",
+    MODE_LABEL = "Mode:",
+    MODE_ALL_HINT = "Pet goes even on Life Tap / stones. SoftCC still recalls on Fear.",
+    MODE_CUSTOM_HINT = "Custom list: /pa block Name  |  /pa unblock Name",
+    MODE_HARM_HINT = "Corruption, curses, SB — yes. Fear/Banish — SoftCC (passive+follow). Stones — no.",
+    RECALL_LABEL = "Recall (pet recall):",
+    RECALL_UNBOUND = "not bound",
+    CUSTOM_BLACKLIST = "Custom blacklist: %d names (custom mode only)",
+    BIND_RECALL = "Bind Recall",
+    PRESS_KEY = "Press a key…",
+    CLEAR = "Clear",
+    RECALL_CLEARED = "Recall bind cleared.",
+    REFRESH = "Refresh",
+    SLASH_HINT = "/pa softcc on|off  |  /pa block Fear  |  /pa mode harm",
+    ESCAPE_OPTIONS = "Esc → Options → AddOns → PetAssist",
+    SUBTITLE = "Pet attacks your target with your cast (Warlock / Hunter)",
+    ADDON_DISABLED = "disabled.",
+    SOFTCC_ON = "SoftCC enabled.",
+    SOFTCC_OFF = "SoftCC disabled.",
+    STANCE_RESTORE_ON = "Stance restore enabled.",
+    STANCE_RESTORE_OFF = "Stance restore disabled.",
+    MODE_CHANGED = "mode → %s",
+    USAGE_MODE = "Usage: /pa mode all|harm|custom (current: %s)",
+    USAGE_BLOCK = "Usage: /pa block SpellName",
+    BLOCK_ADDED = "Added to blacklist. Enable custom: /pa mode custom",
+    BLOCKED = "block: %s",
+    USAGE_UNBLOCK = "Usage: /pa unblock SpellName",
+    UNBLOCKED = "unblock: %s",
+    RECALL_BIND_USAGE = "Recall bind cleared. To bind: /pa recall SHIFT-F",
+    RECALL_BOUND = "Recall → %s (/petpassive + /petfollow)",
+    TEST_OUTPUT = "v%s | on=%s | mode=%s | softCC=%s | restore=%s | proxy=%d | wrap=%d | keyDown=%s | lockdown=%s | recall=%s",
+    TEST_BUTTON_ACTION = "ActionButton1 action=%s macro:\n%s",
+    TEST_NO_PROXY = "ActionButton1 proxy not yet created — /petassist refresh",
+    STATUS_OUTPUT = "%s | %s | SoftCC %s | stance restore %s",
+    STATUS_ENABLED = "enabled v%s",
+    STATUS_DISABLED = "disabled",
+    SLASH_HELP = "Commands: on|off|refresh|test|status|config|mode|softcc|stance|block|unblock|recall",
+    SLASH_MODE_STATUS = "Mode: %s | SoftCC: %s | Stance restore: %s",
+    UNKNOWN_COMMAND = "Unknown command. /pa help",
+    CANNOT_BIND_COMBAT = "cannot change bind in combat.",
+    SOFTCC_TOGGLE = "SoftCC → %s",
+    SOFTCC_ON_DESC = "on (Fear/Banish recall pet)",
+    SOFTCC_OFF_DESC = "off",
+    STANCE_TOGGLE = "Stance restore → %s",
+    CLASS_NOT_SUPPORTED = "PetAssist: only for Hunter and Warlock.",
+  },
+  
+  ruRU = {
+    ENABLED = "Включён",
+    ADDON_READY = "v%s готов [%s]: proxy %d, клавиш %d, extra %d.",
+    REFRESH_AFTER_COMBAT = "обновление после боя…",
+    SOFTCC_GUARD = "SoftCC Guard — на Fear/Banish отзывать пета (passive+follow)",
+    RESTORE_STANCE = "Восстановить стойку пета после SoftCC (например, /petdefensive перед /petattack)",
+    MODE_ALL_DESC = "all — пет на КАЖДУЮ кнопку (включая Fear)",
+    MODE_CUSTOM_DESC = "custom — пет всегда, кроме /pa block",
+    MODE_HARM_DESC = "harm — пет на урон/DoT, НЕ на Fear/камни/баффы",
+    MODE_LABEL = "Режим:",
+    MODE_ALL_HINT = "Пет полетит даже от Life Tap / камней. SoftCC всё равно отзовёт на Fear.",
+    MODE_CUSTOM_HINT = "Свой список: /pa block Имя  |  /pa unblock Имя",
+    MODE_HARM_HINT = "Corruption, курсы, SB — да. Fear/Banish — SoftCC (passive+follow). Камни — нет.",
+    RECALL_LABEL = "Recall (отзыв пета):",
+    RECALL_UNBOUND = "не назначен",
+    CUSTOM_BLACKLIST = "Custom blacklist: %d имён (только для режима custom)",
+    BIND_RECALL = "Назначить Recall",
+    PRESS_KEY = "Нажми клавишу…",
+    CLEAR = "Сброс",
+    RECALL_CLEARED = "Recall бинд сброшен.",
+    SUBTITLE = "Питомец атакует цель вместе с твоим кастом (Warlock / Hunter)",
+    ADDON_DISABLED = "выключен.",
+    SOFTCC_ON = "SoftCC включён.",
+    SOFTCC_OFF = "SoftCC выключен.",
+    STANCE_RESTORE_ON = "Восстановление стойки включено.",
+    STANCE_RESTORE_OFF = "Восстановление стойки выключено.",
+    MODE_CHANGED = "режим → %s",
+    USAGE_MODE = "Использование: /pa mode all|harm|custom (сейчас: %s)",
+    USAGE_BLOCK = "Использование: /pa block ИмяСпелла",
+    BLOCK_ADDED = "Добавлено в blacklist. Включи custom: /pa mode custom",
+    BLOCKED = "block: %s",
+    USAGE_UNBLOCK = "Использование: /pa unblock ИмяСпелла",
+    UNBLOCKED = "unblock: %s",
+    RECALL_BIND_USAGE = "Recall бинд сброшен. Назначить: /pa recall SHIFT-F",
+    RECALL_BOUND = "Recall → %s (/petpassive + /petfollow)",
+    TEST_NO_PROXY = "ActionButton1 proxy ещё нет — /petassist refresh",
+    STATUS_ENABLED = "включён v%s",
+    STATUS_DISABLED = "выключен",
+    SLASH_HELP = "Команды: on|off|refresh|test|status|config|mode|softcc|stance|block|unblock|recall",
+    SLASH_MODE_STATUS = "Режим: %s | SoftCC: %s | Восстановление стойки: %s",
+    UNKNOWN_COMMAND = "Неизвестная команда. /pa help",
+    CANNOT_BIND_COMBAT = "нельзя менять бинд в бою.",
+    SOFTCC_ON_DESC = "on (Fear/Banish отзывают пета)",
+    STANCE_TOGGLE = "Восстановление стойки → %s",
+    CLASS_NOT_SUPPORTED = "PetAssist: только для Охотника и Чернокнижника.",
+  },
+  
+  deDE = {
+    ENABLED = "Aktiviert",
+    ADDON_READY = "v%s bereit [%s]: Proxy %d, Tasten %d, extra %d.",
+    REFRESH_AFTER_COMBAT = "Aktualisierung nach dem Kampf…",
+    SOFTCC_GUARD = "SoftCC-Wächter — ruft Begleiter bei Furcht/Verbannung zurück (passiv+folgen)",
+    RESTORE_STANCE = "Begleiterhaltung nach SoftCC wiederherstellen (z.B. /petdefensive vor /petattack)",
+    MODE_ALL_DESC = "all — Begleiter auf JEDER Taste (einschl. Furcht)",
+    MODE_CUSTOM_DESC = "custom — Begleiter immer, außer /pa block",
+    MODE_HARM_DESC = "harm — Begleiter auf Schaden/DoTs, NICHT auf Furcht/Steine/Buffs",
+    MODE_LABEL = "Modus:",
+    MODE_ALL_HINT = "Begleiter greift auch bei Aderlass / Steinen an. SoftCC ruft trotzdem bei Furcht zurück.",
+    MODE_CUSTOM_HINT = "Eigene Liste: /pa block Name  |  /pa unblock Name",
+    MODE_HARM_HINT = "Verderbnis, Flüche, Schattenblitz — ja. Furcht/Verbannung — SoftCC (passiv+folgen). Steine — nein.",
+    RECALL_LABEL = "Rückruf (Begleiterrückruf):",
+    RECALL_UNBOUND = "nicht belegt",
+    CUSTOM_BLACKLIST = "Eigene Sperrliste: %d Namen (nur im Modus custom)",
+    BIND_RECALL = "Rückruf belegen",
+    PRESS_KEY = "Taste drücken…",
+    CLEAR = "Löschen",
+    RECALL_CLEARED = "Rückruf-Belegung gelöscht.",
+    REFRESH = "Aktualisieren",
+    SUBTITLE = "Begleiter greift dein Ziel mit deinem Zauber an (Hexenmeister / Jäger)",
+    ADDON_DISABLED = "deaktiviert.",
+    SOFTCC_ON = "SoftCC aktiviert.",
+    SOFTCC_OFF = "SoftCC deaktiviert.",
+    STANCE_RESTORE_ON = "Haltungswiederherstellung aktiviert.",
+    STANCE_RESTORE_OFF = "Haltungswiederherstellung deaktiviert.",
+    MODE_CHANGED = "Modus → %s",
+    USAGE_MODE = "Verwendung: /pa mode all|harm|custom (aktuell: %s)",
+    USAGE_BLOCK = "Verwendung: /pa block Zaubername",
+    BLOCK_ADDED = "Zur Sperrliste hinzugefügt. Custom aktivieren: /pa mode custom",
+    BLOCKED = "gesperrt: %s",
+    USAGE_UNBLOCK = "Verwendung: /pa unblock Zaubername",
+    UNBLOCKED = "entsperrt: %s",
+    RECALL_BIND_USAGE = "Rückruf-Belegung gelöscht. Zum Belegen: /pa recall SHIFT-F",
+    RECALL_BOUND = "Rückruf → %s (/petpassive + /petfollow)",
+    TEST_NO_PROXY = "ActionButton1-Proxy noch nicht erstellt — /petassist refresh",
+    STATUS_ENABLED = "aktiviert v%s",
+    STATUS_DISABLED = "deaktiviert",
+    SLASH_HELP = "Befehle: on|off|refresh|test|status|config|mode|softcc|stance|block|unblock|recall",
+    SLASH_MODE_STATUS = "Modus: %s | SoftCC: %s | Haltungswiederherstellung: %s",
+    UNKNOWN_COMMAND = "Unbekannter Befehl. /pa help",
+    CANNOT_BIND_COMBAT = "Belegung kann im Kampf nicht geändert werden.",
+    SOFTCC_ON_DESC = "an (Furcht/Verbannung ruft Begleiter zurück)",
+    STANCE_TOGGLE = "Haltungswiederherstellung → %s",
+    CLASS_NOT_SUPPORTED = "PetAssist: nur für Jäger und Hexenmeister.",
+  },
+  
+  frFR = {
+    ENABLED = "Activé",
+    ADDON_READY = "v%s prêt [%s] : proxy %d, touches %d, extra %d.",
+    REFRESH_AFTER_COMBAT = "actualisation après le combat…",
+    SOFTCC_GUARD = "Garde SoftCC — rappelle le familier sur Peur/Bannissement (passif+suivre)",
+    RESTORE_STANCE = "Restaurer la posture du familier après SoftCC (ex. /petdefensive avant /petattack)",
+    MODE_ALL_DESC = "all — familier sur CHAQUE bouton (y compris Peur)",
+    MODE_CUSTOM_DESC = "custom — familier toujours, sauf /pa block",
+    MODE_HARM_DESC = "harm — familier sur dégâts/DoTs, PAS sur Peur/pierres/buffs",
+    MODE_LABEL = "Mode :",
+    MODE_ALL_HINT = "Le familier attaque même sur Connexion / pierres. SoftCC rappelle quand même sur Peur.",
+    MODE_CUSTOM_HINT = "Liste personnalisée : /pa block Nom  |  /pa unblock Nom",
+    MODE_HARM_HINT = "Corruption, malédictions, Trait — oui. Peur/Bannissement — SoftCC (passif+suivre). Pierres — non.",
+    RECALL_LABEL = "Rappel (rappel du familier) :",
+    RECALL_UNBOUND = "non lié",
+    CUSTOM_BLACKLIST = "Liste noire personnalisée : %d noms (mode custom uniquement)",
+    BIND_RECALL = "Lier le rappel",
+    PRESS_KEY = "Appuyer sur une touche…",
+    CLEAR = "Effacer",
+    RECALL_CLEARED = "Liaison de rappel effacée.",
+    REFRESH = "Actualiser",
+    SUBTITLE = "Le familier attaque votre cible avec votre sort (Démoniste / Chasseur)",
+    ADDON_DISABLED = "désactivé.",
+    SOFTCC_ON = "SoftCC activé.",
+    SOFTCC_OFF = "SoftCC désactivé.",
+    STANCE_RESTORE_ON = "Restauration de posture activée.",
+    STANCE_RESTORE_OFF = "Restauration de posture désactivée.",
+    MODE_CHANGED = "mode → %s",
+    USAGE_MODE = "Usage : /pa mode all|harm|custom (actuel : %s)",
+    USAGE_BLOCK = "Usage : /pa block NomDuSort",
+    BLOCK_ADDED = "Ajouté à la liste noire. Activer custom : /pa mode custom",
+    BLOCKED = "bloqué : %s",
+    USAGE_UNBLOCK = "Usage : /pa unblock NomDuSort",
+    UNBLOCKED = "débloqué : %s",
+    RECALL_BIND_USAGE = "Liaison de rappel effacée. Pour lier : /pa recall SHIFT-F",
+    RECALL_BOUND = "Rappel → %s (/petpassive + /petfollow)",
+    TEST_NO_PROXY = "Proxy ActionButton1 pas encore créé — /petassist refresh",
+    STATUS_ENABLED = "activé v%s",
+    STATUS_DISABLED = "désactivé",
+    SLASH_HELP = "Commandes : on|off|refresh|test|status|config|mode|softcc|stance|block|unblock|recall",
+    SLASH_MODE_STATUS = "Mode : %s | SoftCC : %s | Restauration de posture : %s",
+    UNKNOWN_COMMAND = "Commande inconnue. /pa help",
+    CANNOT_BIND_COMBAT = "impossible de changer la liaison en combat.",
+    SOFTCC_ON_DESC = "activé (Peur/Bannissement rappelle le familier)",
+    STANCE_TOGGLE = "Restauration de posture → %s",
+    CLASS_NOT_SUPPORTED = "PetAssist : uniquement pour Chasseur et Démoniste.",
+  },
+  
+  esES = {
+    ENABLED = "Activado",
+    ADDON_READY = "v%s listo [%s]: proxy %d, teclas %d, extra %d.",
+    REFRESH_AFTER_COMBAT = "actualización después del combate…",
+    SOFTCC_GUARD = "Guardia SoftCC — recuerda la mascota en Miedo/Destierro (pasivo+seguir)",
+    RESTORE_STANCE = "Restaurar postura de mascota después de SoftCC (ej. /petdefensive antes de /petattack)",
+    MODE_ALL_DESC = "all — mascota en CADA botón (incluido Miedo)",
+    MODE_CUSTOM_DESC = "custom — mascota siempre, excepto /pa block",
+    MODE_HARM_DESC = "harm — mascota en daño/DoTs, NO en Miedo/piedras/buffs",
+    MODE_LABEL = "Modo:",
+    MODE_ALL_HINT = "La mascota va incluso con Transfusión / piedras. SoftCC aún así recuerda en Miedo.",
+    MODE_CUSTOM_HINT = "Lista personalizada: /pa block Nombre  |  /pa unblock Nombre",
+    MODE_HARM_HINT = "Corrupción, maldiciones, Descarga — sí. Miedo/Destierro — SoftCC (pasivo+seguir). Piedras — no.",
+    RECALL_LABEL = "Recuerdo (recuerdo de mascota):",
+    RECALL_UNBOUND = "sin asignar",
+    CUSTOM_BLACKLIST = "Lista negra personalizada: %d nombres (solo modo custom)",
+    BIND_RECALL = "Asignar recuerdo",
+    PRESS_KEY = "Pulsa una tecla…",
+    CLEAR = "Limpiar",
+    RECALL_CLEARED = "Asignación de recuerdo limpiada.",
+    REFRESH = "Actualizar",
+    SUBTITLE = "La mascota ataca tu objetivo con tu lanzamiento (Brujo / Cazador)",
+    ADDON_DISABLED = "desactivado.",
+    SOFTCC_ON = "SoftCC activado.",
+    SOFTCC_OFF = "SoftCC desactivado.",
+    STANCE_RESTORE_ON = "Restauración de postura activada.",
+    STANCE_RESTORE_OFF = "Restauración de postura desactivada.",
+    MODE_CHANGED = "modo → %s",
+    USAGE_MODE = "Uso: /pa mode all|harm|custom (actual: %s)",
+    USAGE_BLOCK = "Uso: /pa block NombreDeHechizo",
+    BLOCK_ADDED = "Añadido a la lista negra. Activar custom: /pa mode custom",
+    BLOCKED = "bloqueado: %s",
+    USAGE_UNBLOCK = "Uso: /pa unblock NombreDeHechizo",
+    UNBLOCKED = "desbloqueado: %s",
+    RECALL_BIND_USAGE = "Asignación de recuerdo limpiada. Para asignar: /pa recall SHIFT-F",
+    RECALL_BOUND = "Recuerdo → %s (/petpassive + /petfollow)",
+    TEST_NO_PROXY = "Proxy de ActionButton1 aún no creado — /petassist refresh",
+    STATUS_ENABLED = "activado v%s",
+    STATUS_DISABLED = "desactivado",
+    SLASH_HELP = "Comandos: on|off|refresh|test|status|config|mode|softcc|stance|block|unblock|recall",
+    SLASH_MODE_STATUS = "Modo: %s | SoftCC: %s | Restauración de postura: %s",
+    UNKNOWN_COMMAND = "Comando desconocido. /pa help",
+    CANNOT_BIND_COMBAT = "no se puede cambiar asignación en combate.",
+    SOFTCC_ON_DESC = "activado (Miedo/Destierro recuerda la mascota)",
+    STANCE_TOGGLE = "Restauración de postura → %s",
+    CLASS_NOT_SUPPORTED = "PetAssist: solo para Cazador y Brujo.",
+  },
+  
+  esMX = {
+    -- Mexican Spanish: mostly same as esES with minor regional differences
+    ENABLED = "Activado",
+    ADDON_READY = "v%s listo [%s]: proxy %d, teclas %d, extra %d.",
+    SUBTITLE = "La mascota ataca tu objetivo con tu lanzamiento (Brujo / Cazador)",
+    CLASS_NOT_SUPPORTED = "PetAssist: solo para Cazador y Brujo.",
+  },
+  
+  ptBR = {
+    ENABLED = "Ativado",
+    ADDON_READY = "v%s pronto [%s]: proxy %d, teclas %d, extra %d.",
+    REFRESH_AFTER_COMBAT = "atualização após o combate…",
+    SOFTCC_GUARD = "Guarda SoftCC — chama mascote em Medo/Banimento (passivo+seguir)",
+    RESTORE_STANCE = "Restaurar postura da mascote após SoftCC (ex. /petdefensive antes de /petattack)",
+    MODE_ALL_DESC = "all — mascote em CADA botão (incluindo Medo)",
+    MODE_CUSTOM_DESC = "custom — mascote sempre, exceto /pa block",
+    MODE_HARM_DESC = "harm — mascote em dano/DoTs, NÃO em Medo/pedras/buffs",
+    MODE_LABEL = "Modo:",
+    MODE_ALL_HINT = "Mascote vai até em Drenar Vida / pedras. SoftCC ainda assim chama em Medo.",
+    MODE_CUSTOM_HINT = "Lista personalizada: /pa block Nome  |  /pa unblock Nome",
+    MODE_HARM_HINT = "Corrupção, maldições, Seta — sim. Medo/Banimento — SoftCC (passivo+seguir). Pedras — não.",
+    RECALL_LABEL = "Chamar (chamar mascote):",
+    RECALL_UNBOUND = "não atribuído",
+    CUSTOM_BLACKLIST = "Lista negra personalizada: %d nomes (apenas modo custom)",
+    BIND_RECALL = "Atribuir chamada",
+    PRESS_KEY = "Pressione uma tecla…",
+    CLEAR = "Limpar",
+    RECALL_CLEARED = "Atribuição de chamada limpa.",
+    REFRESH = "Atualizar",
+    SUBTITLE = "A mascote ataca seu alvo com seu lançamento (Bruxo / Caçador)",
+    ADDON_DISABLED = "desativado.",
+    SOFTCC_ON = "SoftCC ativado.",
+    SOFTCC_OFF = "SoftCC desativado.",
+    STANCE_RESTORE_ON = "Restauração de postura ativada.",
+    STANCE_RESTORE_OFF = "Restauração de postura desativada.",
+    MODE_CHANGED = "modo → %s",
+    USAGE_MODE = "Uso: /pa mode all|harm|custom (atual: %s)",
+    USAGE_BLOCK = "Uso: /pa block NomeDaHabilidade",
+    BLOCK_ADDED = "Adicionado à lista negra. Ativar custom: /pa mode custom",
+    BLOCKED = "bloqueado: %s",
+    USAGE_UNBLOCK = "Uso: /pa unblock NomeDaHabilidade",
+    UNBLOCKED = "desbloqueado: %s",
+    RECALL_BIND_USAGE = "Atribuição de chamada limpa. Para atribuir: /pa recall SHIFT-F",
+    RECALL_BOUND = "Chamar → %s (/petpassive + /petfollow)",
+    TEST_NO_PROXY = "Proxy de ActionButton1 ainda não criado — /petassist refresh",
+    STATUS_ENABLED = "ativado v%s",
+    STATUS_DISABLED = "desativado",
+    SLASH_HELP = "Comandos: on|off|refresh|test|status|config|mode|softcc|stance|block|unblock|recall",
+    SLASH_MODE_STATUS = "Modo: %s | SoftCC: %s | Restauração de postura: %s",
+    UNKNOWN_COMMAND = "Comando desconhecido. /pa help",
+    CANNOT_BIND_COMBAT = "não pode mudar atribuição em combate.",
+    SOFTCC_ON_DESC = "ativado (Medo/Banimento chama a mascote)",
+    STANCE_TOGGLE = "Restauração de postura → %s",
+    CLASS_NOT_SUPPORTED = "PetAssist: apenas para Caçador e Bruxo.",
+  },
+  
+  itIT = {
+    ENABLED = "Attivato",
+    ADDON_READY = "v%s pronto [%s]: proxy %d, tasti %d, extra %d.",
+    REFRESH_AFTER_COMBAT = "aggiornamento dopo il combattimento…",
+    SOFTCC_GUARD = "Guardia SoftCC — richiama mascotte su Paura/Esilio (passivo+segui)",
+    RESTORE_STANCE = "Ripristina postura mascotte dopo SoftCC (es. /petdefensive prima di /petattack)",
+    MODE_ALL_DESC = "all — mascotte su OGNI pulsante (incluso Paura)",
+    MODE_CUSTOM_DESC = "custom — mascotte sempre, eccetto /pa block",
+    MODE_HARM_DESC = "harm — mascotte su danno/DoTs, NON su Paura/pietre/buff",
+    MODE_LABEL = "Modalità:",
+    MODE_ALL_HINT = "La mascotte va anche su Salasso / pietre. SoftCC richiama comunque su Paura.",
+    MODE_CUSTOM_HINT = "Lista personalizzata: /pa block Nome  |  /pa unblock Nome",
+    MODE_HARM_HINT = "Corruzione, maledizioni, Freccia — sì. Paura/Esilio — SoftCC (passivo+segui). Pietre — no.",
+    RECALL_LABEL = "Richiamo (richiamo mascotte):",
+    RECALL_UNBOUND = "non assegnato",
+    CUSTOM_BLACKLIST = "Lista nera personalizzata: %d nomi (solo modalità custom)",
+    BIND_RECALL = "Assegna richiamo",
+    PRESS_KEY = "Premi un tasto…",
+    CLEAR = "Cancella",
+    RECALL_CLEARED = "Assegnazione richiamo cancellata.",
+    REFRESH = "Aggiorna",
+    SUBTITLE = "La mascotte attacca il tuo bersaglio con il tuo lancio (Stregone / Cacciatore)",
+    ADDON_DISABLED = "disattivato.",
+    SOFTCC_ON = "SoftCC attivato.",
+    SOFTCC_OFF = "SoftCC disattivato.",
+    STANCE_RESTORE_ON = "Ripristino postura attivato.",
+    STANCE_RESTORE_OFF = "Ripristino postura disattivato.",
+    MODE_CHANGED = "modalità → %s",
+    USAGE_MODE = "Uso: /pa mode all|harm|custom (attuale: %s)",
+    USAGE_BLOCK = "Uso: /pa block NomeIncantesimo",
+    BLOCK_ADDED = "Aggiunto alla lista nera. Attiva custom: /pa mode custom",
+    BLOCKED = "bloccato: %s",
+    USAGE_UNBLOCK = "Uso: /pa unblock NomeIncantesimo",
+    UNBLOCKED = "sbloccato: %s",
+    RECALL_BIND_USAGE = "Assegnazione richiamo cancellata. Per assegnare: /pa recall SHIFT-F",
+    RECALL_BOUND = "Richiamo → %s (/petpassive + /petfollow)",
+    TEST_NO_PROXY = "Proxy ActionButton1 non ancora creato — /petassist refresh",
+    STATUS_ENABLED = "attivato v%s",
+    STATUS_DISABLED = "disattivato",
+    SLASH_HELP = "Comandi: on|off|refresh|test|status|config|mode|softcc|stance|block|unblock|recall",
+    SLASH_MODE_STATUS = "Modalità: %s | SoftCC: %s | Ripristino postura: %s",
+    UNKNOWN_COMMAND = "Comando sconosciuto. /pa help",
+    CANNOT_BIND_COMBAT = "impossibile cambiare assegnazione in combattimento.",
+    SOFTCC_ON_DESC = "attivato (Paura/Esilio richiama la mascotte)",
+    STANCE_TOGGLE = "Ripristino postura → %s",
+    CLASS_NOT_SUPPORTED = "PetAssist: solo per Cacciatore e Stregone.",
+  },
+  
+  -- Asian locales: marked as draft translations (game-terminology may need verification)
+  koKR = {
+    -- Korean (draft)
+    ENABLED = "활성화",
+    ADDON_READY = "v%s 준비 [%s]: 프록시 %d, 키 %d, 추가 %d.",
+    REFRESH_AFTER_COMBAT = "전투 후 새로고침…",
+    SOFTCC_GUARD = "SoftCC 가드 — 공포/추방 시 소환수 회수 (수동+따라가기)",
+    RESTORE_STANCE = "SoftCC 후 소환수 태세 복원 (예: /petattack 전 /petdefensive)",
+    MODE_ALL_DESC = "all — 모든 버튼에 소환수 (공포 포함)",
+    MODE_CUSTOM_DESC = "custom — 항상 소환수, /pa block 제외",
+    MODE_HARM_DESC = "harm — 피해/DoT에만 소환수, 공포/돌/버프는 제외",
+    MODE_LABEL = "모드:",
+    SUBTITLE = "소환수가 시전과 함께 대상 공격 (흑마법사 / 사냥꾼)",
+    ADDON_DISABLED = "비활성화됨.",
+    SOFTCC_ON = "SoftCC 활성화됨.",
+    SOFTCC_OFF = "SoftCC 비활성화됨.",
+    STANCE_RESTORE_ON = "태세 복원 활성화됨.",
+    STANCE_RESTORE_OFF = "태세 복원 비활성화됨.",
+    CLASS_NOT_SUPPORTED = "PetAssist: 사냥꾼과 흑마법사 전용.",
+  },
+  
+  zhCN = {
+    -- Simplified Chinese (draft)
+    ENABLED = "已启用",
+    ADDON_READY = "v%s 就绪 [%s]: 代理 %d, 按键 %d, 额外 %d.",
+    REFRESH_AFTER_COMBAT = "战斗后刷新…",
+    SOFTCC_GUARD = "SoftCC 守护 — 恐惧/放逐时召回宠物 (被动+跟随)",
+    RESTORE_STANCE = "SoftCC 后恢复宠物姿态 (例如 /petattack 前使用 /petdefensive)",
+    MODE_ALL_DESC = "all — 每个按钮都发宠物 (包括恐惧)",
+    MODE_CUSTOM_DESC = "custom — 总是发宠物, 除了 /pa block",
+    MODE_HARM_DESC = "harm — 伤害/DoT 发宠物, 恐惧/石头/增益不发",
+    MODE_LABEL = "模式:",
+    SUBTITLE = "宠物随你的施法攻击目标 (术士 / 猎人)",
+    ADDON_DISABLED = "已禁用。",
+    SOFTCC_ON = "SoftCC 已启用。",
+    SOFTCC_OFF = "SoftCC 已禁用。",
+    STANCE_RESTORE_ON = "姿态恢复已启用。",
+    STANCE_RESTORE_OFF = "姿态恢复已禁用。",
+    CLASS_NOT_SUPPORTED = "PetAssist: 仅限猎人和术士。",
+  },
+  
+  zhTW = {
+    -- Traditional Chinese (draft)
+    ENABLED = "已啟用",
+    ADDON_READY = "v%s 就緒 [%s]: 代理 %d, 按鍵 %d, 額外 %d.",
+    REFRESH_AFTER_COMBAT = "戰鬥後重新整理…",
+    SOFTCC_GUARD = "SoftCC 守護 — 恐懼/放逐時召回寵物 (被動+跟隨)",
+    RESTORE_STANCE = "SoftCC 後恢復寵物姿態 (例如 /petattack 前使用 /petdefensive)",
+    MODE_ALL_DESC = "all — 每個按鈕都發寵物 (包括恐懼)",
+    MODE_CUSTOM_DESC = "custom — 總是發寵物, 除了 /pa block",
+    MODE_HARM_DESC = "harm — 傷害/DoT 發寵物, 恐懼/石頭/增益不發",
+    MODE_LABEL = "模式:",
+    SUBTITLE = "寵物隨你的施法攻擊目標 (術士 / 獵人)",
+    ADDON_DISABLED = "已停用。",
+    SOFTCC_ON = "SoftCC 已啟用。",
+    SOFTCC_OFF = "SoftCC 已停用。",
+    STANCE_RESTORE_ON = "姿態恢復已啟用。",
+    STANCE_RESTORE_OFF = "姿態恢復已停用。",
+    CLASS_NOT_SUPPORTED = "PetAssist: 僅限獵人和術士。",
+  },
+}
+
+-- Build the locale table with fallback
+BuildLocale(TRANSLATIONS)
 
 local defaults = {
   enabled = true,
@@ -430,15 +752,21 @@ local function SyncKeyDownAttr()
   end
 end
 
-local function IsAutoAttackSpell(name)
-  if not name then
-    return false
-  end
-  if ATTACK and name == ATTACK then
+-- Auto-attack spell ID (locale-independent)
+local ATTACK_SPELL_ID = 6603
+
+local function IsAutoAttackSpell(spellId, name)
+  -- Use spell ID for locale-independent detection (Classic Era 1.15.x compatible)
+  if spellId == ATTACK_SPELL_ID then
     return true
   end
-  local lower = name:lower()
-  return lower == "attack" or lower == "атака"
+  
+  -- Fallback: check against global ATTACK string (always present in any locale)
+  if ATTACK and name and name == ATTACK then
+    return true
+  end
+  
+  return false
 end
 
 local function IsBlockedSpell(spellId, name)
@@ -636,7 +964,7 @@ local function BuildMacroText(slot, action)
       end
       return nil
     end
-    if IsAutoAttackSpell(name) then
+    if IsAutoAttackSpell(id, name) then
       if action == PA_ASSIST then
         return PET .. "\n/startattack [@target,harm,nodead]"
       end
