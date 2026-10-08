@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.5.1
+
+### Localization
+- **Full Classic Era locale support:** Added translations for deDE (German), frFR (French), esES (Spanish - Spain), esMX (Spanish - Mexico), ptBR (Portuguese - Brazil), itIT (Italian), koKR (Korean), zhCN (Simplified Chinese), zhTW (Traditional Chinese)
+- **Fallback system:** All locales fall back to English (enUS) for any missing strings
+- **Structured for CurseForge:** Localization tables organized for future integration with CurseForge localization system
+- **Note:** Asian locales (koKR, zhCN, zhTW) are draft translations; game terminology may need verification by native speakers
+
+### Auto-Attack Detection
+- **Locale-independent:** Fixed auto-attack detection to use spell ID 6603 instead of hardcoded string comparisons ("attack", "атака", etc.)
+- **Classic Era compatible:** Uses spell ID check first, fallback to global ATTACK string for reliability
+- **Eliminates bugs:** Now works correctly on all client languages without special-casing locale strings
+
 ## 1.5.0
 
 ### Features

@@ -90,6 +90,23 @@ Bind a key (options UI or `/pa recall KEY`) to pull the pet back: Passive + Foll
 - Casting Fear etc. in **harm** mode does not send the pet
 - **Rank-correct casts:** Downranked spells on your bar cast the exact rank placed, not max rank
 
+## Localization
+
+Fully localized for all Classic Era client languages:
+- English (enUS)
+- German (deDE)
+- French (frFR)
+- Spanish - Spain (esES)
+- Spanish - Mexico (esMX)
+- Portuguese - Brazil (ptBR)
+- Italian (itIT)
+- Russian (ruRU)
+- Korean (koKR) *
+- Simplified Chinese (zhCN) *
+- Traditional Chinese (zhTW) *
+
+\* Asian locale translations are drafts; game terminology verification by native speakers welcome.
+
 ## Support
 
 Classic Era (`## Interface: 11509`). Warlock / Hunter pets.
