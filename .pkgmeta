@@ -8,4 +8,5 @@ ignore:
   - logo-curseforge.png
   - icon.png
   - .github
+  - tests
 manual-changelog: CHANGELOG.md

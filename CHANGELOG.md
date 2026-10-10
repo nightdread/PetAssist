@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.6.0
+
+### Fixes
+- Execute original action buttons instead of rebuilding spell casts and copying macro bodies. This preserves downranks, native targeting, auto-attack behavior, and long macros.
+- Read current secure action/page attributes at click time and precompute policies for all 120 slots, avoiding stale spell proxies after paging in combat.
+- Remove invalid restricted-frame `Click()` calls; route pet commands through a secure OnClick macro and `/click` back to the original button with a recursion guard.
+- Use one preferred-stance command for mouse and keyboard, including modifier binds.
+- Reconcile key-down CVar changes made during combat after combat.
+- Store new blacklist entries once; reuse/cancel Recall key capture when closing options.
+
+### Features
+- Preferred pet stance: Defensive or Passive.
+- Explicit spell/macro rules: attack, recall, ignore, clear; editor in options and `/pa rule` / `/pa rules`.
+- Conservative macro auto mode: recognize simple unconditional casts; leave complex macros unchanged unless opted in. Explicit `/pet...` commands always retain ownership.
+- Macro default policy: `/pa macros auto|attack|recall|ignore`.
+- Howl of Terror and Frost Trap opt-in checkboxes and `/pa howl` / `/pa frost`.
+- Recall binding conflict notification.
+- `/pa test ButtonName`: current slot, ID, decision/reason, prepared policy, and pending-combat refresh.
+
+### Validation
+- Lua 5.1 regression suite and class/locale initialization checks; GitHub Actions runs the suite on pushes and pull requests.
+- Real-client secure execution, macro chaining, action-bar integrations and UI layout require the in-game checklist before release.
+- New UI strings include English/Russian translations and English fallback for other locales.
+
+
 ## 1.5.1
 
 ### Localization

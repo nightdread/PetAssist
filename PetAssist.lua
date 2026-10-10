@@ -1,30 +1,23 @@
 --[[
-  PetAssist 1.5.1 — Classic Era
+  PetAssist 1.6.0 — Classic Era
 
-  PetAttack() is forbidden from addon code. Keybinds are overridden to secure
-  proxy buttons whose macrotext is:
-
-    /petattack [pet,@target,harm,nodead]   (damage / DoTs)
-    /petpassive + /petfollow               (SoftCC: Fear, Banish, …)
-    /cast|/use|macro body
-    /petattack + /startattack              (Attack button only)
-
-  Mouse / Dominos / Bartender / ElvUI: PreClick → secure helper click.
-  Do not put /startattack on ranged spells — it spam "You are too far away".
+  Secure OnClick selects a pet command, then /click executes the original button.
+  Never copy spells or macro bodies: preserve ranks, conditionals,
+  targeting, and action-bar paging. Slot policies are prepared out of combat.
 ]]
 
 local ADDON_NAME = ...
 local VERSION = "@project-version@"
 -- Unpackaged working copy (placeholder not replaced by packager)
 if VERSION:find("@", 1, true) then
-  VERSION = "1.5.1-dev"
+  VERSION = "1.6.0"
 end
 
 local MODE_ALL = "all"
 local MODE_HARM = "harm"
 local MODE_CUSTOM = "custom"
 
--- pa_allow on buttons: 0 = none, 1 = petattack, 2 = SoftCC (passive+follow)
+-- Slot policies: 0 = none, 1 = petattack, 2 = SoftCC (passive+follow)
 local PA_NONE = 0
 local PA_ASSIST = 1
 local PA_SOFTCC = 2
@@ -51,11 +44,39 @@ end
 -- Localization strings: enUS is default/fallback, all other locales override only what they define
 local TRANSLATIONS = {
   enUS = {
+    ADDON_READY = "v%s ready [%s]: buttons %d, keys %d, extra %d.",
+    RESTORE_STANCE = "Set preferred pet stance before assisting",
+    REASON_RULE = "explicit spell/macro rule",
+    REASON_UNKNOWN = "unknown spell",
+    REASON_SOFTCC = "SoftCC Guard",
+    REASON_BLACKLIST = "custom blacklist",
+    REASON_UTILITY = "utility or unsupported action",
+    REASON_MODE = "assist mode",
+    REASON_EMPTY = "empty action",
+    REASON_MACRO_PET = "macro controls its own pet",
+    REASON_MACRO_POLICY = "default macro policy",
+    REASON_MACRO_COMPLEX = "complex macro: choose an explicit rule",
+    STANCE_BUTTON = "Preferred stance: %s",
+    MACRO_BUTTON = "Macros: %s",
+    HOWL_OPTION = "Recall on Howl of Terror",
+    FROST_OPTION = "Recall on Frost Trap",
+    RULE_USAGE = "Usage: /pa rule attack|recall|ignore|clear SpellOrMacroName",
+    RULE_SAVED = "%s: %s",
+    RULE_NAME_HINT = "Spell or macro name",
+    RULE_APPLY = "Apply rule",
+    RULE_ACTION = "Rule: %s",
+    RULE_LIST = "%s = %s",
+    RECALL_CONFLICT = "Recall overrides %s on %s.",
+    TEST_BAD_BUTTON = "Unknown action button: %s",
+    TEST_DETAIL = "%s | slot=%s | type=%s | id=%s | name=%s | policy=%s | prepared=%s | reason=%s | pending=%s | combat=%s",
+    TEST_NATIVE = "Original button executes unchanged | wrapped=%s | stance=%s | macros=%s",
+    SLASH_HELP = "Commands: on|off|refresh|test [ButtonName]|status|config|mode|softcc|stance|macros|howl|frost|rule|rules|block|unblock|recall",
+    OPTION_USAGE = "Usage: /pa %s on|off",
+    MACRO_USAGE = "Usage: /pa macros auto|attack|recall|ignore",
+    STANCE_USAGE = "Usage: /pa stance on|off|passive|defensive",
     ENABLED = "Enabled",
-    ADDON_READY = "v%s ready [%s]: proxy %d, keys %d, extra %d.",
     REFRESH_AFTER_COMBAT = "refresh after combat…",
     SOFTCC_GUARD = "SoftCC Guard — recall pet on Fear/Banish (passive+follow)",
-    RESTORE_STANCE = "Restore pet stance after SoftCC (e.g. /petdefensive before /petattack)",
     MODE_ALL_DESC = "all — pet on EVERY button (including Fear)",
     MODE_CUSTOM_DESC = "custom — pet always, except /pa block",
     MODE_HARM_DESC = "harm — pet on damage/DoTs, NOT on Fear/stones/buffs",
@@ -88,13 +109,9 @@ local TRANSLATIONS = {
     UNBLOCKED = "unblock: %s",
     RECALL_BIND_USAGE = "Recall bind cleared. To bind: /pa recall SHIFT-F",
     RECALL_BOUND = "Recall → %s (/petpassive + /petfollow)",
-    TEST_OUTPUT = "v%s | on=%s | mode=%s | softCC=%s | restore=%s | proxy=%d | wrap=%d | keyDown=%s | lockdown=%s | recall=%s",
-    TEST_BUTTON_ACTION = "ActionButton1 action=%s macro:\n%s",
-    TEST_NO_PROXY = "ActionButton1 proxy not yet created — /petassist refresh",
     STATUS_OUTPUT = "%s | %s | SoftCC %s | stance restore %s",
     STATUS_ENABLED = "enabled v%s",
     STATUS_DISABLED = "disabled",
-    SLASH_HELP = "Commands: on|off|refresh|test|status|config|mode|softcc|stance|block|unblock|recall",
     SLASH_MODE_STATUS = "Mode: %s | SoftCC: %s | Stance restore: %s",
     UNKNOWN_COMMAND = "Unknown command. /pa help",
     CANNOT_BIND_COMBAT = "cannot change bind in combat.",
@@ -106,11 +123,39 @@ local TRANSLATIONS = {
   },
   
   ruRU = {
+    ADDON_READY = "v%s готов [%s]: кнопок %d, клавиш %d, сторонних %d.",
+    RESTORE_STANCE = "Устанавливать выбранную стойку перед атакой питомца",
+    REASON_RULE = "правило способности/макроса",
+    REASON_UNKNOWN = "неизвестное заклинание",
+    REASON_SOFTCC = "SoftCC Guard",
+    REASON_BLACKLIST = "свой список исключений",
+    REASON_UTILITY = "служебное или неподдерживаемое действие",
+    REASON_MODE = "режим помощи",
+    REASON_EMPTY = "пустая кнопка",
+    REASON_MACRO_PET = "макрос сам управляет питомцем",
+    REASON_MACRO_POLICY = "общее правило макросов",
+    REASON_MACRO_COMPLEX = "сложный макрос: назначь отдельное правило",
+    STANCE_BUTTON = "Стойка питомца: %s",
+    MACRO_BUTTON = "Макросы: %s",
+    HOWL_OPTION = "Отзывать при Вое ужаса",
+    FROST_OPTION = "Отзывать при Ледяной ловушке",
+    RULE_USAGE = "Использование: /pa rule attack|recall|ignore|clear ИмяСпособностиИлиМакроса",
+    RULE_SAVED = "%s: %s",
+    RULE_NAME_HINT = "Имя способности или макроса",
+    RULE_APPLY = "Применить правило",
+    RULE_ACTION = "Правило: %s",
+    RULE_LIST = "%s = %s",
+    RECALL_CONFLICT = "Отзыв перекрывает %s на клавише %s.",
+    TEST_BAD_BUTTON = "Неизвестная кнопка: %s",
+    TEST_DETAIL = "%s | слот=%s | тип=%s | ID=%s | имя=%s | правило=%s | подготовлено=%s | причина=%s | ожидает=%s | бой=%s",
+    TEST_NATIVE = "Исходная кнопка выполняется без изменений | подключена=%s | стойка=%s | макросы=%s",
+    SLASH_HELP = "Команды: on|off|refresh|test [ИмяКнопки]|status|config|mode|softcc|stance|macros|howl|frost|rule|rules|block|unblock|recall",
+    OPTION_USAGE = "Использование: /pa %s on|off",
+    MACRO_USAGE = "Использование: /pa macros auto|attack|recall|ignore",
+    STANCE_USAGE = "Использование: /pa stance on|off|passive|defensive",
     ENABLED = "Включён",
-    ADDON_READY = "v%s готов [%s]: proxy %d, клавиш %d, extra %d.",
     REFRESH_AFTER_COMBAT = "обновление после боя…",
     SOFTCC_GUARD = "SoftCC Guard — на Fear/Banish отзывать пета (passive+follow)",
-    RESTORE_STANCE = "Восстановить стойку пета после SoftCC (например, /petdefensive перед /petattack)",
     MODE_ALL_DESC = "all — пет на КАЖДУЮ кнопку (включая Fear)",
     MODE_CUSTOM_DESC = "custom — пет всегда, кроме /pa block",
     MODE_HARM_DESC = "harm — пет на урон/DoT, НЕ на Fear/камни/баффы",
@@ -140,10 +185,8 @@ local TRANSLATIONS = {
     UNBLOCKED = "unblock: %s",
     RECALL_BIND_USAGE = "Recall бинд сброшен. Назначить: /pa recall SHIFT-F",
     RECALL_BOUND = "Recall → %s (/petpassive + /petfollow)",
-    TEST_NO_PROXY = "ActionButton1 proxy ещё нет — /petassist refresh",
     STATUS_ENABLED = "включён v%s",
     STATUS_DISABLED = "выключен",
-    SLASH_HELP = "Команды: on|off|refresh|test|status|config|mode|softcc|stance|block|unblock|recall",
     SLASH_MODE_STATUS = "Режим: %s | SoftCC: %s | Восстановление стойки: %s",
     UNKNOWN_COMMAND = "Неизвестная команда. /pa help",
     CANNOT_BIND_COMBAT = "нельзя менять бинд в бою.",
@@ -154,10 +197,8 @@ local TRANSLATIONS = {
   
   deDE = {
     ENABLED = "Aktiviert",
-    ADDON_READY = "v%s bereit [%s]: Proxy %d, Tasten %d, extra %d.",
     REFRESH_AFTER_COMBAT = "Aktualisierung nach dem Kampf…",
     SOFTCC_GUARD = "SoftCC-Wächter — ruft Begleiter bei Furcht/Verbannung zurück (passiv+folgen)",
-    RESTORE_STANCE = "Begleiterhaltung nach SoftCC wiederherstellen (z.B. /petdefensive vor /petattack)",
     MODE_ALL_DESC = "all — Begleiter auf JEDER Taste (einschl. Furcht)",
     MODE_CUSTOM_DESC = "custom — Begleiter immer, außer /pa block",
     MODE_HARM_DESC = "harm — Begleiter auf Schaden/DoTs, NICHT auf Furcht/Steine/Buffs",
@@ -188,7 +229,6 @@ local TRANSLATIONS = {
     UNBLOCKED = "entsperrt: %s",
     RECALL_BIND_USAGE = "Rückruf-Belegung gelöscht. Zum Belegen: /pa recall SHIFT-F",
     RECALL_BOUND = "Rückruf → %s (/petpassive + /petfollow)",
-    TEST_NO_PROXY = "ActionButton1-Proxy noch nicht erstellt — /petassist refresh",
     STATUS_ENABLED = "aktiviert v%s",
     STATUS_DISABLED = "deaktiviert",
     SLASH_HELP = "Befehle: on|off|refresh|test|status|config|mode|softcc|stance|block|unblock|recall",
@@ -202,10 +242,8 @@ local TRANSLATIONS = {
   
   frFR = {
     ENABLED = "Activé",
-    ADDON_READY = "v%s prêt [%s] : proxy %d, touches %d, extra %d.",
     REFRESH_AFTER_COMBAT = "actualisation après le combat…",
     SOFTCC_GUARD = "Garde SoftCC — rappelle le familier sur Peur/Bannissement (passif+suivre)",
-    RESTORE_STANCE = "Restaurer la posture du familier après SoftCC (ex. /petdefensive avant /petattack)",
     MODE_ALL_DESC = "all — familier sur CHAQUE bouton (y compris Peur)",
     MODE_CUSTOM_DESC = "custom — familier toujours, sauf /pa block",
     MODE_HARM_DESC = "harm — familier sur dégâts/DoTs, PAS sur Peur/pierres/buffs",
@@ -236,7 +274,6 @@ local TRANSLATIONS = {
     UNBLOCKED = "débloqué : %s",
     RECALL_BIND_USAGE = "Liaison de rappel effacée. Pour lier : /pa recall SHIFT-F",
     RECALL_BOUND = "Rappel → %s (/petpassive + /petfollow)",
-    TEST_NO_PROXY = "Proxy ActionButton1 pas encore créé — /petassist refresh",
     STATUS_ENABLED = "activé v%s",
     STATUS_DISABLED = "désactivé",
     SLASH_HELP = "Commandes : on|off|refresh|test|status|config|mode|softcc|stance|block|unblock|recall",
@@ -250,10 +287,8 @@ local TRANSLATIONS = {
   
   esES = {
     ENABLED = "Activado",
-    ADDON_READY = "v%s listo [%s]: proxy %d, teclas %d, extra %d.",
     REFRESH_AFTER_COMBAT = "actualización después del combate…",
     SOFTCC_GUARD = "Guardia SoftCC — recuerda la mascota en Miedo/Destierro (pasivo+seguir)",
-    RESTORE_STANCE = "Restaurar postura de mascota después de SoftCC (ej. /petdefensive antes de /petattack)",
     MODE_ALL_DESC = "all — mascota en CADA botón (incluido Miedo)",
     MODE_CUSTOM_DESC = "custom — mascota siempre, excepto /pa block",
     MODE_HARM_DESC = "harm — mascota en daño/DoTs, NO en Miedo/piedras/buffs",
@@ -284,7 +319,6 @@ local TRANSLATIONS = {
     UNBLOCKED = "desbloqueado: %s",
     RECALL_BIND_USAGE = "Asignación de recuerdo limpiada. Para asignar: /pa recall SHIFT-F",
     RECALL_BOUND = "Recuerdo → %s (/petpassive + /petfollow)",
-    TEST_NO_PROXY = "Proxy de ActionButton1 aún no creado — /petassist refresh",
     STATUS_ENABLED = "activado v%s",
     STATUS_DISABLED = "desactivado",
     SLASH_HELP = "Comandos: on|off|refresh|test|status|config|mode|softcc|stance|block|unblock|recall",
@@ -299,17 +333,14 @@ local TRANSLATIONS = {
   esMX = {
     -- Mexican Spanish: mostly same as esES with minor regional differences
     ENABLED = "Activado",
-    ADDON_READY = "v%s listo [%s]: proxy %d, teclas %d, extra %d.",
     SUBTITLE = "La mascota ataca tu objetivo con tu lanzamiento (Brujo / Cazador)",
     CLASS_NOT_SUPPORTED = "PetAssist: solo para Cazador y Brujo.",
   },
   
   ptBR = {
     ENABLED = "Ativado",
-    ADDON_READY = "v%s pronto [%s]: proxy %d, teclas %d, extra %d.",
     REFRESH_AFTER_COMBAT = "atualização após o combate…",
     SOFTCC_GUARD = "Guarda SoftCC — chama mascote em Medo/Banimento (passivo+seguir)",
-    RESTORE_STANCE = "Restaurar postura da mascote após SoftCC (ex. /petdefensive antes de /petattack)",
     MODE_ALL_DESC = "all — mascote em CADA botão (incluindo Medo)",
     MODE_CUSTOM_DESC = "custom — mascote sempre, exceto /pa block",
     MODE_HARM_DESC = "harm — mascote em dano/DoTs, NÃO em Medo/pedras/buffs",
@@ -340,7 +371,6 @@ local TRANSLATIONS = {
     UNBLOCKED = "desbloqueado: %s",
     RECALL_BIND_USAGE = "Atribuição de chamada limpa. Para atribuir: /pa recall SHIFT-F",
     RECALL_BOUND = "Chamar → %s (/petpassive + /petfollow)",
-    TEST_NO_PROXY = "Proxy de ActionButton1 ainda não criado — /petassist refresh",
     STATUS_ENABLED = "ativado v%s",
     STATUS_DISABLED = "desativado",
     SLASH_HELP = "Comandos: on|off|refresh|test|status|config|mode|softcc|stance|block|unblock|recall",
@@ -354,10 +384,8 @@ local TRANSLATIONS = {
   
   itIT = {
     ENABLED = "Attivato",
-    ADDON_READY = "v%s pronto [%s]: proxy %d, tasti %d, extra %d.",
     REFRESH_AFTER_COMBAT = "aggiornamento dopo il combattimento…",
     SOFTCC_GUARD = "Guardia SoftCC — richiama mascotte su Paura/Esilio (passivo+segui)",
-    RESTORE_STANCE = "Ripristina postura mascotte dopo SoftCC (es. /petdefensive prima di /petattack)",
     MODE_ALL_DESC = "all — mascotte su OGNI pulsante (incluso Paura)",
     MODE_CUSTOM_DESC = "custom — mascotte sempre, eccetto /pa block",
     MODE_HARM_DESC = "harm — mascotte su danno/DoTs, NON su Paura/pietre/buff",
@@ -388,7 +416,6 @@ local TRANSLATIONS = {
     UNBLOCKED = "sbloccato: %s",
     RECALL_BIND_USAGE = "Assegnazione richiamo cancellata. Per assegnare: /pa recall SHIFT-F",
     RECALL_BOUND = "Richiamo → %s (/petpassive + /petfollow)",
-    TEST_NO_PROXY = "Proxy ActionButton1 non ancora creato — /petassist refresh",
     STATUS_ENABLED = "attivato v%s",
     STATUS_DISABLED = "disattivato",
     SLASH_HELP = "Comandi: on|off|refresh|test|status|config|mode|softcc|stance|block|unblock|recall",
@@ -404,10 +431,8 @@ local TRANSLATIONS = {
   koKR = {
     -- Korean (draft)
     ENABLED = "활성화",
-    ADDON_READY = "v%s 준비 [%s]: 프록시 %d, 키 %d, 추가 %d.",
     REFRESH_AFTER_COMBAT = "전투 후 새로고침…",
     SOFTCC_GUARD = "SoftCC 가드 — 공포/추방 시 소환수 회수 (수동+따라가기)",
-    RESTORE_STANCE = "SoftCC 후 소환수 태세 복원 (예: /petattack 전 /petdefensive)",
     MODE_ALL_DESC = "all — 모든 버튼에 소환수 (공포 포함)",
     MODE_CUSTOM_DESC = "custom — 항상 소환수, /pa block 제외",
     MODE_HARM_DESC = "harm — 피해/DoT에만 소환수, 공포/돌/버프는 제외",
@@ -424,10 +449,8 @@ local TRANSLATIONS = {
   zhCN = {
     -- Simplified Chinese (draft)
     ENABLED = "已启用",
-    ADDON_READY = "v%s 就绪 [%s]: 代理 %d, 按键 %d, 额外 %d.",
     REFRESH_AFTER_COMBAT = "战斗后刷新…",
     SOFTCC_GUARD = "SoftCC 守护 — 恐惧/放逐时召回宠物 (被动+跟随)",
-    RESTORE_STANCE = "SoftCC 后恢复宠物姿态 (例如 /petattack 前使用 /petdefensive)",
     MODE_ALL_DESC = "all — 每个按钮都发宠物 (包括恐惧)",
     MODE_CUSTOM_DESC = "custom — 总是发宠物, 除了 /pa block",
     MODE_HARM_DESC = "harm — 伤害/DoT 发宠物, 恐惧/石头/增益不发",
@@ -444,10 +467,8 @@ local TRANSLATIONS = {
   zhTW = {
     -- Traditional Chinese (draft)
     ENABLED = "已啟用",
-    ADDON_READY = "v%s 就緒 [%s]: 代理 %d, 按鍵 %d, 額外 %d.",
     REFRESH_AFTER_COMBAT = "戰鬥後重新整理…",
     SOFTCC_GUARD = "SoftCC 守護 — 恐懼/放逐時召回寵物 (被動+跟隨)",
-    RESTORE_STANCE = "SoftCC 後恢復寵物姿態 (例如 /petattack 前使用 /petdefensive)",
     MODE_ALL_DESC = "all — 每個按鈕都發寵物 (包括恐懼)",
     MODE_CUSTOM_DESC = "custom — 總是發寵物, 除了 /pa block",
     MODE_HARM_DESC = "harm — 傷害/DoT 發寵物, 恐懼/石頭/增益不發",
@@ -470,6 +491,9 @@ local defaults = {
   mode = MODE_HARM,       -- all | harm | custom
   softCC = true,          -- on Fear/Banish/… pull pet back (passive+follow)
   restoreStance = true,   -- restore pet stance (e.g. /petdefensive) before /petattack on normal spells
+  stance = "defensive",
+  macroPolicy = "auto",   -- auto (simple casts only) | attack | recall | ignore
+  rules = {},             -- localized spell or macro name -> attack | recall | ignore
   softCCHowl = false,     -- include Howl of Terror in SoftCC (opt-in)
   softCCFrostTrap = false,-- include Frost Trap in SoftCC (opt-in)
   blacklist = {},         -- [lowerSpellName] = true (custom mode)
@@ -529,6 +553,8 @@ local BLOCK_SPELL_IDS = {
   6991,                       -- Feed Pet
   136, 3111, 3661, 3662, 13542, 13543, 13544, -- Mend Pet
   -- Hunter Aspects
+  13163,                      -- Aspect of the Monkey
+  13161,                      -- Aspect of the Beast
   13165,                      -- Aspect of the Hawk
   14318, 14319, 14320, 14321, 14322, 25296, -- Aspect of the Hawk ranks
   5118,                       -- Aspect of the Cheetah
@@ -574,11 +600,11 @@ local SOFTCC_FROST_TRAP_IDS = {
 }
 
 local BARS = {
-  { bind = "ACTIONBUTTON",          btn = "ActionButton",              firstSlot = 1 },
-  { bind = "MULTIACTIONBAR1BUTTON", btn = "MultiBarBottomLeftButton",  firstSlot = 61 },
-  { bind = "MULTIACTIONBAR2BUTTON", btn = "MultiBarBottomRightButton", firstSlot = 49 },
-  { bind = "MULTIACTIONBAR3BUTTON", btn = "MultiBarRightButton",       firstSlot = 25 },
-  { bind = "MULTIACTIONBAR4BUTTON", btn = "MultiBarLeftButton",        firstSlot = 37 },
+  { bind = "ACTIONBUTTON",          btn = "ActionButton" },
+  { bind = "MULTIACTIONBAR1BUTTON", btn = "MultiBarBottomLeftButton" },
+  { bind = "MULTIACTIONBAR2BUTTON", btn = "MultiBarBottomRightButton" },
+  { bind = "MULTIACTIONBAR3BUTTON", btn = "MultiBarRightButton" },
+  { bind = "MULTIACTIONBAR4BUTTON", btn = "MultiBarLeftButton" },
 }
 
 -- Extra action buttons (keybinds usually CLICK the button → PreClick is enough)
@@ -596,24 +622,6 @@ local header = CreateFrame("Frame", "PetAssistHeader", UIParent, "SecureHandlerB
 local PET = "/petattack [pet,@target,harm,nodead]"
 local SOFTCC = "/petpassive\n/petfollow"
 
-local petOnly = CreateFrame("Button", "PetAssistPetOnly", UIParent, "SecureActionButtonTemplate")
-petOnly:RegisterForClicks("AnyUp", "AnyDown")
-petOnly:SetAttribute("type", "macro")
-petOnly:SetAttribute("*type*", "macro")
-petOnly:SetAttribute("macrotext", PET)
-petOnly:SetAttribute("*macrotext*", PET)
-petOnly:Hide()
-header:SetFrameRef("petOnly", petOnly)
-
-local softCcBtn = CreateFrame("Button", "PetAssistSoftCC", UIParent, "SecureActionButtonTemplate")
-softCcBtn:RegisterForClicks("AnyUp", "AnyDown")
-softCcBtn:SetAttribute("type", "macro")
-softCcBtn:SetAttribute("*type*", "macro")
-softCcBtn:SetAttribute("macrotext", SOFTCC)
-softCcBtn:SetAttribute("*macrotext*", SOFTCC)
-softCcBtn:Hide()
-header:SetFrameRef("softCc", softCcBtn)
-
 local recallBtn = CreateFrame("Button", "PetAssistRecall", UIParent, "SecureActionButtonTemplate")
 recallBtn:RegisterForClicks("AnyUp", "AnyDown")
 recallBtn:SetAttribute("type", "macro")
@@ -622,54 +630,64 @@ recallBtn:SetAttribute("macrotext", SOFTCC)
 recallBtn:SetAttribute("*macrotext*", SOFTCC)
 recallBtn:Hide()
 
-local proxies = {}
 local wrapped = {}
 local blockedNames = {}
 local softCcNames = {}
 local pendingRefresh = false
 local optionsFrame
 local settingsCategory -- Settings API category (Classic Era Options → AddOns)
-local playerClass
 local isHunterOrWarlock = false
 local hasShownClassWarning = false
 local firstLogin = true
 local refreshDebounceTimer
-local eventDebounceTimer
 
--- PreClick: pa_allow 1 = petattack, 2 = SoftCC (passive+follow)
-local PRECLICK_PET = [[
-  if not control:GetAttribute("pa_enabled") then
+-- Read the same effective action/page attributes used by native secure buttons.
+-- The native OnClick decides which physical phase fires (including mouse-up).
+-- All policy attributes are written out of combat; paging itself remains secure.
+local ONCLICK_PET = [[
+  -- /click below re-enters this wrapper once with the original mouse button.
+  if self:GetAttribute("pa_reentry") then
+    self:SetAttribute("pa_reentry", nil)
     return
   end
-  local allow = self:GetAttribute("pa_allow")
-  if allow ~= 1 and allow ~= 2 then
-    return
-  end
-  local wantDown = control:GetAttribute("pa_keydown")
-  if wantDown == 1 then
-    if not down then return end
+  if not control:GetAttribute("pa_enabled") then return end
+  if self:GetEffectiveAttribute("type", button) ~= "action" then return end
+  local wantDown = self:GetEffectiveAttribute("useOnKeyDown", button)
+  if wantDown == nil then wantDown = control:GetAttribute("pa_keydown") == 1 end
+
+  local slot
+  if self:GetAttribute("pa_native") and self:GetID() > 0 then
+    local page = self:GetEffectiveAttribute("actionpage", button)
+      or tonumber(control:GetAttribute("state-page")) or 1
+    slot = self:GetID() + (page - 1) * 12
   else
-    if down then return end
+    slot = self:GetEffectiveAttribute("action", button)
   end
-  if allow == 1 then
-    local pet = control:GetFrameRef("petOnly")
-    if pet then
-      pet:Click(button, down)
-    end
-  elseif allow == 2 then
-    local soft = control:GetFrameRef("softCc")
-    if soft then
-      soft:Click(button, down)
-    end
-  end
+  if not slot then return end
+  local allow = control:GetAttribute("pa_slot_" .. slot)
+  local text
+  if allow == 1 then text = control:GetAttribute("pa_assist_text")
+  elseif allow == 2 then text = control:GetAttribute("pa_recall_text") end
+  if not text then return end
+  -- Restricted frame handles have no Click method. Let SecureActionButton's
+  -- native macro action run /click, preserving the original button and phase.
+  self:SetAttribute("*type-PetAssist", "macro")
+  self:SetAttribute("*macro-PetAssist", "")
+  self:SetAttribute("*macrotext-PetAssist", text .. "\n/click " .. self:GetName()
+    .. " " .. button .. (wantDown and " 1" or " 0"))
+  self:SetAttribute("pa_reentry", true)
+  return "PetAssist", true
 ]]
+
+-- Fallback for older Blizzard buttons without an inherited actionpage attribute.
+RegisterStateDriver(header, "page", "[bar:6]6;[bar:5]5;[bar:4]4;[bar:3]3;[bar:2]2;1")
 
 local function Print(msg)
   DEFAULT_CHAT_FRAME:AddMessage("|cff9966ffPetAssist|r: " .. msg)
 end
 
 local function DB()
-  if not PetAssistDB then
+  if type(PetAssistDB) ~= "table" then
     PetAssistDB = {}
   end
   for k, v in pairs(defaults) do
@@ -686,6 +704,22 @@ local function DB()
   end
   if PetAssistDB.mode ~= MODE_ALL and PetAssistDB.mode ~= MODE_HARM and PetAssistDB.mode ~= MODE_CUSTOM then
     PetAssistDB.mode = MODE_HARM
+  end
+  if PetAssistDB.schemaVersion ~= 1 then
+    local blacklist = {}
+    for name, value in pairs(PetAssistDB.blacklist) do
+      if type(name) == "string" and value then blacklist[name:lower()] = true end
+    end
+    PetAssistDB.blacklist = blacklist
+    PetAssistDB.schemaVersion = 1
+  end
+  if type(PetAssistDB.rules) ~= "table" then PetAssistDB.rules = {} end
+  if PetAssistDB.stance ~= "passive" and PetAssistDB.stance ~= "defensive" then
+    PetAssistDB.stance = "defensive"
+  end
+  if PetAssistDB.macroPolicy ~= "auto" and PetAssistDB.macroPolicy ~= "attack"
+    and PetAssistDB.macroPolicy ~= "recall" and PetAssistDB.macroPolicy ~= "ignore" then
+    PetAssistDB.macroPolicy = "auto"
   end
   return PetAssistDB
 end
@@ -752,23 +786,6 @@ local function SyncKeyDownAttr()
   end
 end
 
--- Auto-attack spell ID (locale-independent)
-local ATTACK_SPELL_ID = 6603
-
-local function IsAutoAttackSpell(spellId, name)
-  -- Use spell ID for locale-independent detection (Classic Era 1.15.x compatible)
-  if spellId == ATTACK_SPELL_ID then
-    return true
-  end
-  
-  -- Fallback: check against global ATTACK string (always present in any locale)
-  if ATTACK and name and name == ATTACK then
-    return true
-  end
-  
-  return false
-end
-
 local function IsBlockedSpell(spellId, name)
   if spellId and blockedNames[SpellName(spellId) or ""] then
     return true
@@ -802,88 +819,91 @@ local function IsCustomBlacklisted(name)
   return bl[name] or bl[name:lower()] or false
 end
 
---- Decide whether this action should send /petattack
--- harm  = всё, кроме встроенного списка CC/utility (DoT/SB/курсы — да; Fear/камни — нет)
--- all   = любая кнопка
--- custom = всё, кроме /pa block
-local function ShouldAssist(actionType, id)
+local RULE_ACTIONS = { attack = PA_ASSIST, recall = PA_SOFTCC, ignore = PA_NONE }
+
+local function NamedRule(name)
+  if name then
+    return RULE_ACTIONS[DB().rules[name] or DB().rules[name:lower()]]
+  end
+end
+
+local function ResolveSpell(id, name)
   local db = DB()
-  local mode = db.mode or MODE_HARM
-
-  if mode == MODE_ALL then
-    return true
+  name = name or SpellName(id)
+  local rule = NamedRule(name)
+  if rule ~= nil then return rule, L.REASON_RULE end
+  if not name then return PA_NONE, L.REASON_UNKNOWN end
+  if db.softCC and IsSoftCCSpell(id, name) then
+    return PA_SOFTCC, L.REASON_SOFTCC
   end
-
-  if actionType == "spell" then
-    local name = SpellName(id)
-    if mode == MODE_CUSTOM then
-      return not IsCustomBlacklisted(name)
-    end
-    -- harm: do NOT use IsHarmfulSpell — in Classic Era it often returns
-    -- false for DoTs (Corruption, Curse of Agony, Immolate, …).
-    return not IsBlockedSpell(id, name)
+  if db.mode == MODE_CUSTOM and IsCustomBlacklisted(name) then
+    return PA_NONE, L.REASON_BLACKLIST
   end
-
-  if actionType == "item" then
-    if mode == MODE_CUSTOM then
-      return true
-    end
-    -- harm: no pet on HS / potions / trinkets
-    return false
+  if db.mode == MODE_HARM and IsBlockedSpell(id, name) then
+    return PA_NONE, L.REASON_UTILITY
   end
-
-  if actionType == "macro" then
-    if mode == MODE_CUSTOM then
-      local mName = GetMacroInfo(id)
-      if mName and IsCustomBlacklisted(mName) then
-        return false
-      end
-    end
-    return true
-  end
-
-  return false
+  return PA_ASSIST, L.REASON_MODE
 end
 
---- Returns PA_ASSIST | PA_SOFTCC | PA_NONE (SoftCC wins over assist on Fear etc.)
+-- Only classify an unconditional single /cast. Do not guess which branch of a
+-- conditional/sequence macro will run. Explicit pet commands always own policy.
+local function InspectMacro(body)
+  local castName, casts = nil, 0
+  local unsafe, ownsPet = false, false
+  for line in (body .. "\n"):gmatch("([^\n]*)\n") do
+    line = line:match("^%s*(.-)%s*$")
+    local command, argument = line:match("^(/%S+)%s*(.-)$")
+    local lower = command and command:lower()
+    if lower and lower:match("^/pet") then ownsPet = true end
+    if line ~= "" and not line:match("^#") then
+      if lower == "/cast" and argument ~= "" and not argument:find("[%[%];]") then
+        casts = casts + 1
+        castName = argument:gsub("%s*%b()$", "")
+      else
+        unsafe = true
+      end
+    end
+  end
+  return not unsafe and casts == 1 and castName or nil, ownsPet
+end
+
 local function ResolveAction(actionType, id)
-  if not actionType then
-    return PA_NONE
-  end
-  if actionType == "spell" then
-    local name = SpellName(id)
-    if DB().softCC and IsSoftCCSpell(id, name) then
-      return PA_SOFTCC
+  if not actionType then return PA_NONE, L.REASON_EMPTY end
+  local db = DB()
+  if actionType == "spell" then return ResolveSpell(id) end
+  if actionType == "macro" then
+    if not id then return PA_NONE, L.REASON_UNKNOWN end
+    local name, _, body = GetMacroInfo(id)
+    if not body or body == "" then return PA_NONE, L.REASON_EMPTY end
+    local castName, ownsPet = InspectMacro(body)
+    if ownsPet then return PA_NONE, L.REASON_MACRO_PET end
+    local rule = NamedRule(name)
+    if rule ~= nil then return rule, L.REASON_RULE end
+    if db.mode == MODE_CUSTOM and IsCustomBlacklisted(name) then
+      return PA_NONE, L.REASON_BLACKLIST
     end
-  end
-  if ShouldAssist(actionType, id) then
-    return PA_ASSIST
-  end
-  return PA_NONE
-end
-
-local function ActionSlotFor(bar, index, realBtn)
-  if realBtn then
-    if ActionButton_CalculateAction then
-      local ok, slot = pcall(ActionButton_CalculateAction, realBtn)
-      if ok and slot then
-        return slot
-      end
+    local policy = RULE_ACTIONS[db.macroPolicy]
+    if policy ~= nil then return policy, L.REASON_MACRO_POLICY end
+    if castName then
+      local name = SpellName(castName)
+      if not name then return PA_NONE, L.REASON_UNKNOWN end
+      return ResolveSpell(nil, name)
     end
-    local attr = realBtn:GetAttribute("action")
-    if attr then
-      return attr
-    end
+    return PA_NONE, L.REASON_MACRO_COMPLEX
   end
-  if bar and bar.firstSlot then
-    return bar.firstSlot + index - 1
+  if actionType == "item" and db.mode ~= MODE_HARM then
+    return PA_ASSIST, L.REASON_MODE
   end
-  return nil
+  return PA_NONE, L.REASON_UTILITY
 end
 
 local function SlotFromButton(btn)
   if not btn then
     return nil
+  end
+  if btn.CalculateAction then
+    local ok, slot = pcall(btn.CalculateAction, btn)
+    if ok and slot then return slot end
   end
   if ActionButton_CalculateAction then
     local ok, slot = pcall(ActionButton_CalculateAction, btn)
@@ -894,203 +914,59 @@ local function SlotFromButton(btn)
   return btn:GetAttribute("action") or btn.action
 end
 
-local function GetSpellWithRank(spellId, name)
-  if not name then
-    return nil
-  end
-  
-  -- Try to get rank from GetSpellSubtext (Classic Era API)
-  local subtext = GetSpellSubtext and GetSpellSubtext(spellId)
-  if subtext and subtext ~= "" then
-    -- subtext is usually "Rank N" or localized equivalent
-    return name .. "(" .. subtext .. ")"
-  end
-  
-  -- Fallback: scan spellbook to find the rank placed on the bar
-  -- This is necessary because the action bar may have a downranked spell
-  local i = 1
-  while true do
-    local spellName, spellRank = GetSpellBookItemName(i, BOOKTYPE_SPELL)
-    if not spellName then
-      break
-    end
-    if spellName == name then
-      local spellBookId = GetSpellBookItemInfo(i, BOOKTYPE_SPELL)
-      if spellBookId == spellId then
-        if spellRank and spellRank ~= "" then
-          return name .. "(" .. spellRank .. ")"
-        else
-          return name
-        end
-      end
-    end
-    i = i + 1
-  end
-  
-  return name
-end
-
-local function BuildMacroText(slot, action)
-  if not slot then
-    return nil
-  end
-
-  local actionType, id = GetActionInfo(slot)
-  if not actionType then
-    return nil
-  end
-
-  local prefix = ""
+local function SyncPetCommand()
   local db = DB()
-  
-  if action == PA_ASSIST then
-    -- Add stance restoration if enabled
-    if db.restoreStance then
-      prefix = "/petdefensive [pet,nomod]\n" .. PET .. "\n"
-    else
-      prefix = PET .. "\n"
-    end
-  elseif action == PA_SOFTCC then
-    prefix = SOFTCC .. "\n"
+  local text = PET
+  if db.restoreStance then
+    local stanceCommand = db.stance == "passive" and "/petpassive" or "/petdefensive"
+    text = stanceCommand .. " [pet,@target,harm,nodead]\n" .. PET
   end
-
-  if actionType == "spell" then
-    local name = SpellName(id)
-    if not name then
-      if action == PA_ASSIST then
-        return PET
-      elseif action == PA_SOFTCC then
-        return SOFTCC
-      end
-      return nil
-    end
-    if IsAutoAttackSpell(id, name) then
-      if action == PA_ASSIST then
-        return PET .. "\n/startattack [@target,harm,nodead]"
-      end
-      return "/startattack [@target,harm,nodead]"
-    end
-    if action == PA_NONE then
-      return nil -- leave native button
-    end
-    
-    -- Get spell with correct rank
-    local spellWithRank = GetSpellWithRank(id, name)
-    return prefix .. "/cast " .. spellWithRank
-  elseif actionType == "item" then
-    if action == PA_NONE then
-      return nil
-    end
-    return prefix .. "/use item:" .. id
-  elseif actionType == "macro" then
-    local _, _, body = GetMacroInfo(id)
-    if body and body ~= "" then
-      local lower = body:lower()
-      if lower:find("petattack", 1, true) or lower:find("petpassive", 1, true) then
-        return body
-      end
-      if action == PA_NONE then
-        return nil
-      end
-      local out = prefix .. body
-      if #out <= 255 then
-        return out
-      end
-      return (action == PA_SOFTCC) and SOFTCC or PET
-    end
-  end
-
-  return nil
+  header:SetAttribute("pa_assist_text", text)
+  header:SetAttribute("pa_recall_text", SOFTCC)
 end
 
-local function SetButtonAction(btn, action)
-  if btn and not InCombatLockdown() then
-    btn:SetAttribute("pa_allow", action or PA_NONE)
+local function PrepareSlotPolicies()
+  -- Classic has ten pages of twelve action slots, including bonus/possess bars.
+  for slot = 1, 120 do
+    local actionType, id = GetActionInfo(slot)
+    local action = ResolveAction(actionType, id)
+    header:SetAttribute("pa_slot_" .. slot, action)
   end
 end
 
-local function EnsureProxy(bar, index)
-  local key = bar.btn .. index
-  local proxy = proxies[key]
-  if not proxy then
-    proxy = CreateFrame(
-      "Button",
-      "PetAssistProxy_" .. key,
-      UIParent,
-      "SecureActionButtonTemplate"
-    )
-    proxy:RegisterForClicks("AnyUp", "AnyDown")
-    proxy:SetAttribute("type", "macro")
-    proxy:SetAttribute("*type*", "macro")
-    proxy:Hide()
-    proxies[key] = proxy
-  end
-  proxy.paBar = bar
-  proxy.paIndex = index
-  proxy.paReal = _G[key]
-  return proxy
-end
-
-local function SetProxyMacro(proxy)
-  if not proxy or InCombatLockdown() then
-    return nil, PA_NONE
-  end
-  local slot = ActionSlotFor(proxy.paBar, proxy.paIndex, proxy.paReal)
-  local actionType, id = slot and GetActionInfo(slot)
-  local action = PA_NONE
-  if actionType then
-    action = ResolveAction(actionType, id)
-  end
-  local text = BuildMacroText(slot, action)
-  proxy.paSlot = slot
-  proxy.paMacro = text
-  proxy.paAction = action
-  if text then
-    proxy:SetAttribute("macrotext", text)
-    proxy:SetAttribute("macrotext1", text)
-    proxy:SetAttribute("*macrotext*", text)
-  end
-  SetButtonAction(proxy.paReal, action)
-  return text, action
-end
-
-local function WrapForMouse(realBtn)
+local function WrapButton(realBtn)
   if not realBtn or wrapped[realBtn] or InCombatLockdown() then
     return
   end
-  header:WrapScript(realBtn, "PreClick", PRECLICK_PET)
+  header:WrapScript(realBtn, "OnClick", ONCLICK_PET, [[
+    self:SetAttribute("pa_reentry", nil)
+  ]])
   wrapped[realBtn] = true
 end
 
-local function UnwrapAllMouse()
+local function UnwrapButtons()
   if InCombatLockdown() then
     return
   end
   for btn in pairs(wrapped) do
     pcall(function()
-      header:UnwrapScript(btn, "PreClick")
+      header:UnwrapScript(btn, "OnClick")
     end)
     pcall(function()
-      btn:SetAttribute("pa_allow", nil)
+      btn:SetAttribute("pa_native", nil)
+      btn:SetAttribute("pa_reentry", nil)
+      btn:SetAttribute("*type-PetAssist", nil)
+      btn:SetAttribute("*macro-PetAssist", nil)
+      btn:SetAttribute("*macrotext-PetAssist", nil)
     end)
   end
   wipe(wrapped)
 end
 
 local function UpdateExtraButton(btn)
-  if not btn or InCombatLockdown() then
-    return
-  end
-  local slot = SlotFromButton(btn)
-  local action = PA_NONE
-  if slot then
-    local actionType, id = GetActionInfo(slot)
-    if actionType then
-      action = ResolveAction(actionType, id)
-    end
-  end
-  SetButtonAction(btn, action)
-  WrapForMouse(btn)
+  if not btn or InCombatLockdown() then return end
+  btn:SetAttribute("pa_native", false)
+  WrapButton(btn)
 end
 
 local function ScanExtraButtons()
@@ -1110,6 +986,13 @@ local function ScanExtraButtons()
     end
   end
   return n
+end
+
+local function ReportRecallConflict(key)
+  local command = GetBindingAction(key)
+  if command and command ~= "" and command ~= "CLICK PetAssistRecall:LeftButton" then
+    Print(string.format(L.RECALL_CONFLICT, command, key))
+  end
 end
 
 local function ApplyRecallBinding()
@@ -1140,33 +1023,29 @@ local function Apply()
   header:SetAttribute("pa_enabled", db.enabled and true or false)
 
   if not db.enabled then
-    UnwrapAllMouse()
+    UnwrapButtons()
     return true, 0, 0, 0
   end
 
-  local proxyCount, keyCount, extraCount = 0, 0, 0
-
+  SyncPetCommand()
+  PrepareSlotPolicies()
+  local buttonCount, keyCount, extraCount = 0, 0, 0
   for _, bar in ipairs(BARS) do
     for i = 1, 12 do
       local realBtn = _G[bar.btn .. i]
-      local proxy = EnsureProxy(bar, i)
-      local text, action = SetProxyMacro(proxy)
-      proxyCount = proxyCount + 1
-
       if realBtn then
-        WrapForMouse(realBtn)
-        SetButtonAction(realBtn, action)
-      end
-
-      -- Steal key for assist (petattack) or SoftCC (passive+follow)
-      if text and (action == PA_ASSIST or action == PA_SOFTCC) then
+        realBtn:SetAttribute("pa_native", true)
+        WrapButton(realBtn)
+        buttonCount = buttonCount + 1
+        -- Bind the original button on every page, including currently empty slots.
+        -- Its native secure action preserves macro bodies, spell ranks and targets.
         local key1, key2 = GetBindingKey(bar.bind .. i)
         if key1 then
-          SetOverrideBindingClick(binder, true, key1, proxy:GetName(), "LeftButton")
+          SetOverrideBindingClick(binder, true, key1, realBtn:GetName(), "LeftButton")
           keyCount = keyCount + 1
         end
         if key2 then
-          SetOverrideBindingClick(binder, true, key2, proxy:GetName(), "LeftButton")
+          SetOverrideBindingClick(binder, true, key2, realBtn:GetName(), "LeftButton")
           keyCount = keyCount + 1
         end
       end
@@ -1176,7 +1055,7 @@ local function Apply()
   extraCount = ScanExtraButtons()
   ApplyRecallBinding()
 
-  return true, proxyCount, keyCount, extraCount
+  return true, buttonCount, keyCount, extraCount
 end
 
 local function Refresh(quiet)
@@ -1248,6 +1127,12 @@ local function RefreshOptionsUI()
   if optionsFrame.restoreStanceCheck then
     optionsFrame.restoreStanceCheck:SetChecked(db.restoreStance ~= false)
   end
+  if optionsFrame.stanceButton then
+    optionsFrame.stanceButton:SetText(string.format(L.STANCE_BUTTON, db.stance))
+    optionsFrame.macroButton:SetText(string.format(L.MACRO_BUTTON, db.macroPolicy))
+    optionsFrame.howlCheck:SetChecked(db.softCCHowl)
+    optionsFrame.frostCheck:SetChecked(db.softCCFrostTrap)
+  end
   optionsFrame.modeText:SetText(L.MODE_LABEL .. " " .. ModeLabel(db.mode))
   if optionsFrame.modeHint then
     if db.mode == MODE_ALL then
@@ -1301,7 +1186,7 @@ local function CreateOptions()
       if not InCombatLockdown() then
         ClearOverrideBindings(binder)
         header:SetAttribute("pa_enabled", false)
-        UnwrapAllMouse()
+        UnwrapButtons()
       else
         pendingRefresh = true
       end
@@ -1339,8 +1224,43 @@ local function CreateOptions()
   end)
   f.restoreStanceCheck = restoreStanceCheck
 
+  local stanceButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+  stanceButton:SetSize(250, 24)
+  stanceButton:SetPoint("TOPLEFT", restoreStanceCheck, "BOTTOMLEFT", 4, -8)
+  stanceButton:SetScript("OnClick", function()
+    DB().stance = DB().stance == "defensive" and "passive" or "defensive"
+    Refresh(true)
+    RefreshOptionsUI()
+  end)
+  f.stanceButton = stanceButton
+
+  local macroButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+  macroButton:SetSize(250, 24)
+  macroButton:SetPoint("LEFT", stanceButton, "RIGHT", 8, 0)
+  macroButton:SetScript("OnClick", function()
+    local nextPolicy = { auto = "attack", attack = "recall", recall = "ignore", ignore = "auto" }
+    DB().macroPolicy = nextPolicy[DB().macroPolicy]
+    Refresh(true)
+    RefreshOptionsUI()
+  end)
+  f.macroButton = macroButton
+
+  local function OptionalCC(name, key, label, anchor, x, y)
+    local check = CreateFrame("CheckButton", name, f, "UICheckButtonTemplate")
+    check:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", x, y)
+    _G[name .. "Text"]:SetText(label)
+    check:SetScript("OnClick", function(self)
+      DB()[key] = self:GetChecked() and true or false
+      Refresh(true)
+      RefreshOptionsUI()
+    end)
+    return check
+  end
+  f.howlCheck = OptionalCC("PetAssistHowlCheck", "softCCHowl", L.HOWL_OPTION, stanceButton, -4, -6)
+  f.frostCheck = OptionalCC("PetAssistFrostCheck", "softCCFrostTrap", L.FROST_OPTION, macroButton, -4, -6)
+
   local modeText = f:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-  modeText:SetPoint("TOPLEFT", restoreStanceCheck, "BOTTOMLEFT", 4, -14)
+  modeText:SetPoint("TOPLEFT", f.howlCheck, "BOTTOMLEFT", 4, -8)
   modeText:SetWidth(520)
   modeText:SetJustifyH("LEFT")
   f.modeText = modeText
@@ -1355,7 +1275,7 @@ local function CreateOptions()
   local btnHarm = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
   btnHarm:SetSize(140, 24)
   btnHarm:SetPoint("TOPLEFT", modeText, "BOTTOMLEFT", 0, -8)
-  btnHarm:SetText("harm (DoT+урон)")
+  btnHarm:SetText("harm")
   btnHarm:SetScript("OnClick", function() SetMode(MODE_HARM) end)
 
   local btnAll = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
@@ -1382,8 +1302,42 @@ local function CreateOptions()
   blText:SetJustifyH("LEFT")
   f.blText = blText
 
+  local ruleName = CreateFrame("EditBox", nil, f, "InputBoxTemplate")
+  ruleName:SetSize(215, 24)
+  ruleName:SetPoint("TOPLEFT", blText, "BOTTOMLEFT", 4, -12)
+  ruleName:SetAutoFocus(false)
+  ruleName:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+  local ruleLabel = f:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+  ruleLabel:SetPoint("BOTTOMLEFT", ruleName, "TOPLEFT", 0, 2)
+  ruleLabel:SetText(L.RULE_NAME_HINT)
+  local ruleMode = "ignore"
+  local ruleButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+  ruleButton:SetSize(140, 24)
+  ruleButton:SetPoint("LEFT", ruleName, "RIGHT", 8, 0)
+  ruleButton:SetText(string.format(L.RULE_ACTION, ruleMode))
+  ruleButton:SetScript("OnClick", function(self)
+    local nextRule = { ignore = "attack", attack = "recall", recall = "clear", clear = "ignore" }
+    ruleMode = nextRule[ruleMode]
+    self:SetText(string.format(L.RULE_ACTION, ruleMode))
+  end)
+  local ruleApply = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+  ruleApply:SetSize(140, 24)
+  ruleApply:SetPoint("LEFT", ruleButton, "RIGHT", 8, 0)
+  ruleApply:SetText(L.RULE_APPLY)
+  ruleApply:SetScript("OnClick", function()
+    local name = ruleName:GetText():match("^%s*(.-)%s*$")
+    if name == "" then Print(L.RULE_USAGE); return end
+    DB().rules[name] = nil
+    DB().rules[name:lower()] = ruleMode ~= "clear" and ruleMode or nil
+    ruleName:ClearFocus()
+    Refresh(true)
+    Print(string.format(L.RULE_SAVED, name, ruleMode))
+  end)
+
+  f.ruleName, f.ruleButton, f.ruleApply = ruleName, ruleButton, ruleApply
+
   local recallText = f:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-  recallText:SetPoint("TOPLEFT", blText, "BOTTOMLEFT", 0, -16)
+  recallText:SetPoint("TOPLEFT", ruleName, "BOTTOMLEFT", -4, -12)
   recallText:SetWidth(520)
   recallText:SetJustifyH("LEFT")
   f.recallText = recallText
@@ -1392,13 +1346,15 @@ local function CreateOptions()
   bindBtn:SetSize(160, 24)
   bindBtn:SetPoint("TOPLEFT", recallText, "BOTTOMLEFT", 0, -8)
   bindBtn:SetText(L.BIND_RECALL)
+  local binderFrame = CreateFrame("Frame", nil, f)
+  binderFrame:Hide()
+  f.recallCapture = binderFrame
   bindBtn:SetScript("OnClick", function(self)
     if InCombatLockdown() then
       Print(L.CANNOT_BIND_COMBAT)
       return
     end
     self:SetText(L.PRESS_KEY)
-    local binderFrame = CreateFrame("Frame", nil, f)
     binderFrame:EnableKeyboard(true)
     if binderFrame.SetPropagateKeyboardInput then
       binderFrame:SetPropagateKeyboardInput(false)
@@ -1419,9 +1375,9 @@ local function CreateOptions()
       if IsAltKeyDown() then parts[#parts + 1] = "ALT" end
       parts[#parts + 1] = key
       local binding = table.concat(parts, "-")
+      ReportRecallConflict(binding)
       DB().recallKey = binding
       Refresh(true)
-      ApplyRecallBinding()
       self:SetText(L.BIND_RECALL)
       Print(string.format(L.RECALL_BOUND, binding))
       RefreshOptionsUI()
@@ -1451,9 +1407,14 @@ local function CreateOptions()
   hint:SetPoint("TOPLEFT", refreshBtn, "BOTTOMLEFT", 0, -20)
   hint:SetWidth(520)
   hint:SetJustifyH("LEFT")
-  hint:SetText(L.SLASH_HINT .. "\n" .. L.ESCAPE_OPTIONS)
+  hint:SetText(L.SLASH_HINT .. "\n/pa rule attack|recall|ignore|clear Name\n" .. L.ESCAPE_OPTIONS)
 
   f:SetScript("OnShow", RefreshOptionsUI)
+  f:SetScript("OnHide", function()
+    binderFrame:Hide()
+    binderFrame:EnableKeyboard(false)
+    bindBtn:SetText(L.BIND_RECALL)
+  end)
 
   optionsFrame = f
   RefreshOptionsUI()
@@ -1498,7 +1459,7 @@ local function ToggleOptions()
   if not optionsFrame:GetParent() or optionsFrame:GetParent() == UIParent then
     optionsFrame:SetParent(UIParent)
     optionsFrame:ClearAllPoints()
-    optionsFrame:SetSize(480, 360)
+    optionsFrame:SetSize(600, 600)
     optionsFrame:SetPoint("CENTER")
     optionsFrame:SetFrameStrata("DIALOG")
   end
@@ -1525,7 +1486,6 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1)
     if arg1 == ADDON_NAME then
       -- Detect class
       local _, class = UnitClass("player")
-      playerClass = class
       isHunterOrWarlock = (class == "HUNTER" or class == "WARLOCK")
       
       DB()
@@ -1537,7 +1497,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1)
 
   if event == "CVAR_UPDATE" then
     if arg1 == "ActionButtonUseKeyDown" then
-      SyncKeyDownAttr()
+      if InCombatLockdown() then pendingRefresh = true else SyncKeyDownAttr() end
     end
     return
   end
@@ -1627,7 +1587,7 @@ SlashCmdList.PETASSIST = function(msg)
     if not InCombatLockdown() then
       ClearOverrideBindings(binder)
       header:SetAttribute("pa_enabled", false)
-      UnwrapAllMouse()
+      UnwrapButtons()
     else
       pendingRefresh = true
     end
@@ -1653,11 +1613,44 @@ SlashCmdList.PETASSIST = function(msg)
       db.restoreStance = true
     elseif m == "off" or m == "выкл" or m == "0" then
       db.restoreStance = false
-    else
+    elseif m == "passive" or m == "defensive" then
+      db.stance = m
+      db.restoreStance = true
+    elseif m == "" then
       db.restoreStance = not (db.restoreStance ~= false)
+    else
+      Print(L.STANCE_USAGE)
+      return
     end
     Refresh(false)
-    Print(string.format(L.STANCE_TOGGLE, db.restoreStance and "on" or "off"))
+    Print(string.format(L.STANCE_TOGGLE, db.restoreStance and db.stance or "off"))
+  elseif cmd == "macros" then
+    local policy = rest:lower()
+    if policy ~= "auto" and RULE_ACTIONS[policy] == nil then Print(L.MACRO_USAGE); return end
+    db.macroPolicy = policy
+    Refresh(true)
+    Print(string.format(L.MACRO_BUTTON, policy))
+  elseif cmd == "howl" or cmd == "frost" then
+    local value = rest:lower()
+    if value ~= "on" and value ~= "off" then Print(string.format(L.OPTION_USAGE, cmd)); return end
+    db[cmd == "howl" and "softCCHowl" or "softCCFrostTrap"] = value == "on"
+    Refresh(true)
+  elseif cmd == "rule" then
+    local policy, name = rest:match("^(%S+)%s+(.+)$")
+    policy = policy and policy:lower()
+    if not name or (policy ~= "clear" and RULE_ACTIONS[policy] == nil) then
+      Print(L.RULE_USAGE)
+      return
+    end
+    db.rules[name] = nil
+    db.rules[name:lower()] = policy ~= "clear" and policy or nil
+    Refresh(true)
+    Print(string.format(L.RULE_SAVED, name, policy))
+  elseif cmd == "rules" then
+    local names = {}
+    for name in pairs(db.rules) do names[#names + 1] = name end
+    table.sort(names)
+    for _, name in ipairs(names) do Print(string.format(L.RULE_LIST, name, db.rules[name])) end
   elseif cmd == "mode" or cmd == "режим" then
     local m = rest:lower()
     if m == MODE_ALL or m == MODE_HARM or m == MODE_CUSTOM then
@@ -1672,7 +1665,7 @@ SlashCmdList.PETASSIST = function(msg)
       Print(L.USAGE_BLOCK)
       return
     end
-    db.blacklist[rest] = true
+    db.blacklist[rest] = nil
     db.blacklist[rest:lower()] = true
     if db.mode ~= MODE_CUSTOM then
       Print(L.BLOCK_ADDED)
@@ -1695,30 +1688,29 @@ SlashCmdList.PETASSIST = function(msg)
       Print(L.RECALL_BIND_USAGE)
     else
       db.recallKey = rest:upper():gsub("%s+", "")
+      ReportRecallConflict(db.recallKey)
       Refresh(true)
       Print(string.format(L.RECALL_BOUND, db.recallKey))
     end
   elseif cmd == "test" or cmd == "тест" then
-    local nProxy, nWrap = 0, 0
-    for _ in pairs(proxies) do
-      nProxy = nProxy + 1
+    local buttonName = rest ~= "" and rest or "ActionButton1"
+    local btn = _G[buttonName]
+    if not btn or type(btn.GetAttribute) ~= "function" then
+      Print(string.format(L.TEST_BAD_BUTTON, buttonName))
+      return
     end
-    for _ in pairs(wrapped) do
-      nWrap = nWrap + 1
-    end
-    local p = proxies["ActionButton1"]
-    Print(string.format(
-      L.TEST_OUTPUT,
-      VERSION, tostring(db.enabled), tostring(db.mode), tostring(db.softCC ~= false),
-      tostring(db.restoreStance ~= false),
-      nProxy, nWrap, tostring(UseKeyDown()), tostring(InCombatLockdown()), tostring(db.recallKey)
-    ))
-    if p then
-      local actionName = ({ [0] = "none", [1] = "assist", [2] = "softcc" })[p.paAction or 0] or "?"
-      Print(string.format(L.TEST_BUTTON_ACTION, actionName, tostring(p.paMacro or p:GetAttribute("macrotext"))))
-    else
-      Print(L.TEST_NO_PROXY)
-    end
+    local slot = SlotFromButton(btn)
+    local actionType, id
+    if slot then actionType, id = GetActionInfo(slot) end
+    local action, reason = ResolveAction(actionType, id)
+    local prepared = slot and header:GetAttribute("pa_slot_" .. slot) or PA_NONE
+    local name = actionType == "spell" and SpellName(id)
+    if actionType == "macro" then name = GetMacroInfo(id) end
+    Print(string.format(L.TEST_DETAIL, buttonName, tostring(slot), tostring(actionType),
+      tostring(id), tostring(name), tostring(action), tostring(prepared), reason,
+      tostring(pendingRefresh), tostring(InCombatLockdown())))
+    Print(string.format(L.TEST_NATIVE, tostring(wrapped[btn] == true), tostring(DB().stance),
+      tostring(DB().macroPolicy)))
   elseif cmd == "status" or cmd == "статус" then
     local statusText = db.enabled and string.format(L.STATUS_ENABLED, VERSION) or L.STATUS_DISABLED
     Print(string.format(L.STATUS_OUTPUT,

@@ -4,7 +4,7 @@ Classic Era addon for Warlocks and Hunters: your pet attacks the same target as 
 
 ## Why
 
-In Classic, a pet on **Defensive** only joins after you (or the pet) take damage. Ranged openers leave the pet idle. Blizzard blocks `PetAttack()` from normal addon code, so PetAssist uses secure action-bar keybinds / PreClick wrappers instead.
+In Classic, a pet on **Defensive** only joins after you (or the pet) take damage. Ranged openers leave the pet idle. Blizzard blocks `PetAttack()` from normal addon code, so PetAssist uses secure action-bar keybinds and OnClick wrappers instead. The wrapper issues the pet command, then uses `/click` to execute the original button. Spells and user macro bodies are never reconstructed or truncated.
 
 ## Install
 
@@ -32,19 +32,19 @@ So the pet stops hitting and does not break your CC. The next damage spell sends
 
 Toggle: options checkbox or `/pa softcc on|off` (default **on**).
 
-**Note:** Howl of Terror and Frost Trap are opt-in (not default SoftCC). Seduction was removed from SoftCC (pet's own spell).
+**Note:** Howl of Terror and Frost Trap are opt-in (options checkboxes or `/pa howl on` / `/pa frost on`; not default SoftCC). Seduction was removed from SoftCC (pet's own spell).
 
 ### Stance Restoration
 
 When enabled (default **on**), normal assist spells automatically restore pet stance before attacking:
 
 ```
-/petdefensive [pet,nomod]
+/petdefensive [pet,@target,harm,nodead]
 /petattack [pet,@target,harm,nodead]
 /cast …
 ```
 
-This ensures your pet returns to a proper stance (e.g. Defensive) after SoftCC puts it on Passive.
+Choose Defensive (default) or Passive in options, or use `/pa stance defensive|passive`. This sets your preferred stance before assisting; it does not remember the previous stance. Mouse clicks and modifier keybinds use the same behavior. Friendly, dead or absent targets do not change stance.
 
 Toggle: options checkbox or `/pa stance on|off`.
 
@@ -57,30 +57,58 @@ Toggle: options checkbox or `/pa stance on|off`.
 | `/pa refresh` | rebuild binds (out of combat) |
 | `/pa config` | Esc → Options → AddOns → PetAssist |
 | `/pa softcc on\|off` | SoftCC Guard (recall pet on Fear/Banish) |
-| `/pa stance on\|off` | Stance restoration (restore /petdefensive before /petattack) |
+| `/pa stance on\|off\|defensive\|passive` | Enable/disable preferred stance, or select it |
+| `/pa howl on\|off` / `/pa frost on\|off` | Include Howl of Terror / Frost Trap in SoftCC |
+| `/pa macros auto\|attack\|recall\|ignore` | Default behavior for macros |
+| `/pa rule attack\|recall\|ignore\|clear Name` | Set/remove an explicit spell or macro rule |
+| `/pa rules` | List saved rules |
 | `/pa mode all\|harm\|custom` | when to send the pet |
 | `/pa block SpellName` | add to custom blacklist |
 | `/pa unblock SpellName` | remove from custom blacklist |
 | `/pa recall SHIFT-F` | bind Recall (`/petpassive` + `/petfollow`) |
 | `/pa recall clear` | clear Recall bind |
-| `/pa test` | debug status (includes stance restore state) |
+| `/pa test [ButtonName]` | Inspect an action button (default: ActionButton1): slot, spell ID, chosen/prepared policy and reason |
 | `/pa status` | on/off + mode + stance restore |
 
 ### Modes
 
 - **harm** (default) — pet on damage/DoTs/curses; **not** on Fear, Banish, stones, buffs, Life Tap
-- **all** — every action-bar press (including Fear)
+- **all** — spells and items, subject to SoftCC and explicit rules
 - **custom** — everything except names you `/pa block`
 
-### Recall
+### Spell and macro rules
 
-Bind a key (options UI or `/pa recall KEY`) to pull the pet back: Passive + Follow. Useful before CC or when the pet over-aggros.
+Use the rule editor in options, or the localized spell name / exact macro name:
+
+```text
+/pa rule recall Fear macro
+/pa rule ignore Life Tap
+/pa rule attack Corruption
+/pa rule clear Corruption
+/pa rules
+```
+
+Rules apply in every mode and take precedence over built-in SoftCC and utility lists. `clear` restores automatic behavior. A spell and macro with the same name share the rule. Name case matching uses Lua's lowercase conversion; for non-Latin names use the spelling shown by the client.
+
+### Macro behavior
+
+Default **auto** recognizes one unconditional `/cast SpellName` (optional rank and `#showtooltip` lines). Fear recalls the pet; damage spells assist; utility spells do not assist in harm mode. Unknown spells are ignored.
+
+Conditional macros (`[mod:shift]`, `[@mouseover]`, `;`), `/castsequence`, `/use`, and macros with additional commands are left alone. Add an explicit macro rule to opt in. The default macro policy is separate from `all|harm|custom`; `all` does not force ambiguous macros to assist.
+
+`/pa macros attack|recall|ignore` applies that default policy to macros without their own rule. A macro containing an explicit `/pet...` command always owns pet behavior: PetAssist leaves it alone, even when an attack/recall rule is set. Native macro execution and spell ranks are preserved. PetAssist's automatic target remains `@target`; it does not infer a conditional macro's selected target.
+
+## Recall
+
+Bind a key (options UI or `/pa recall KEY`) to pull the pet back: Passive + Follow. Useful before CC or when the pet over-aggros. PetAssist reports the underlying binding it will override. Clearing Recall restores that binding after refresh (after combat if necessary).
 
 ## Compatibility
 
 - Default Blizzard bars (keybinds + mouse)
-- **Dominos**, **Bartender4**, **ElvUI** action buttons (PreClick)
-- After rearranging spells, `/pa refresh` out of combat (or leave combat)
+- **Dominos**, **Bartender4**, **ElvUI** action buttons (secure OnClick; action-slot buttons)
+- Spell/macro edits refresh automatically out of combat; `/pa refresh` can also rebuild rules
+- Changing pages in combat reads the current secure action slot from the button; slot policies are prepared out of combat
+- Option changes during combat take effect after combat
 - Spellbook UI casts are not hooked — use the action bar
 
 ## Notes
@@ -92,7 +120,7 @@ Bind a key (options UI or `/pa recall KEY`) to pull the pet back: Passive + Foll
 
 ## Localization
 
-Fully localized for all Classic Era client languages:
+Existing strings support all Classic Era client languages. New 1.6 controls and diagnostics are translated into English and Russian; other locales fall back to English for these additions:
 - English (enUS)
 - German (deDE)
 - French (frFR)
@@ -116,8 +144,18 @@ Classic Era (`## Interface: 11509`). Warlock / Hunter pets.
 Releases upload automatically when you push a version tag:
 
 ```bash
-git tag v1.4.1
-git push origin v1.4.1
+git tag v1.6.0
+git push origin v1.6.0
 ```
 
 Requires GitHub secret `CF_API_KEY` and `## X-Curse-Project-ID` in the `.toc`.
+
+
+## Development checks
+
+```bash
+python3 -m pip install lupa==2.8
+python3 tests/run.py
+```
+
+The suite loads the full addon in Lua 5.1 with mocked WoW APIs, checks action dispatch, macro preservation, pet policies, paging, settings, key phases, and class/locale initialization. Restricted snippets receive only allowed frame methods. It does **not** emulate Blizzard taint propagation or validate `/click` macro execution in a real client. Run the [in-game checklist](tests/IN_GAME.md) before releasing 1.6.0.
