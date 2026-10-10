@@ -1,5 +1,5 @@
 --[[
-  PetAssist 1.6.0 — Classic Era
+  PetAssist 1.6.1 — Classic Era
 
   Secure OnClick selects a pet command, then /click executes the original button.
   Never copy spells or macro bodies: preserve ranks, conditionals,
@@ -10,7 +10,7 @@ local ADDON_NAME = ...
 local VERSION = "@project-version@"
 -- Unpackaged working copy (placeholder not replaced by packager)
 if VERSION:find("@", 1, true) then
-  VERSION = "1.6.0"
+  VERSION = "1.6.1"
 end
 
 local MODE_ALL = "all"
@@ -484,6 +484,65 @@ local TRANSLATIONS = {
 }
 
 -- Build the locale table with fallback
+-- Settings use plain labels; command values remain stable for saved profiles.
+local UI_TRANSLATIONS = {
+  enUS = {
+    UI_ENABLED = "Enable PetAssist", UI_SUBTITLE = "Send your pet to attack when you use abilities.",
+    UI_GENERAL = "General", UI_ADVANCED = "Advanced", UI_RULES = "Rules",
+    UI_MODE = "When should your pet attack?", UI_HARM = "Offensive abilities (recommended)",
+    UI_HARM_HINT = "Attack with damage spells and curses; leave buffs and utility abilities alone.",
+    UI_ALL = "All supported abilities and items", UI_ALL_HINT = "Also attack when using buffs, stones and other utility actions.",
+    UI_CUSTOM = "All supported actions except your exclusions", UI_CUSTOM_HINT = "Manage your excluded names in the Rules tab.",
+    UI_STANCE = "Pet stance", UI_RESTORE = "Set this stance before sending the pet to attack",
+    UI_DEFENSIVE = "Defensive", UI_PASSIVE = "Passive",
+    UI_STANCE_HINT = "After a recall, the next attack uses this stance if the option is enabled.",
+    UI_RECALL = "Recall shortcut", UI_RECALL_HINT = "Stop attacking and return to you. Escape cancels key assignment.",
+    UI_BIND = "Assign key", UI_UNBIND = "Remove key", UI_BINDING = "Current key: %s",
+    UI_SAFETY = "Protect crowd control", UI_SOFTCC = "Recall on Fear, Banish and Freezing Trap",
+    UI_SAFETY_HINT = "Makes the pet passive and brings it back to avoid breaking these effects.",
+    UI_MACROS = "Macros without a custom rule", UI_AUTO = "Automatic (recommended)",
+    UI_AUTO_HINT = "Recognize simple spell macros. Leave complex macros unchanged.",
+    UI_ATTACK = "Send pet to attack", UI_RECALL_ACTION = "Recall pet", UI_IGNORE = "Leave pet unchanged",
+    UI_MACRO_HINT = "Macros with their own pet commands always keep control of the pet.",
+    UI_RULES_HINT = "Use the exact spell or macro name. Rules override the general mode and crowd-control protection.",
+    UI_NAME = "Spell or macro name", UI_DEFAULT = "Use default behavior (remove rule)",
+    UI_SAVE = "Save rule", UI_SAVED = "Saved rules — click one to edit", UI_EMPTY = "No custom rules yet.",
+    UI_EXCLUSIONS = "Excluded names (custom mode only)", UI_EXCLUSIONS_HINT = "Enter a name to add or remove it from the custom mode exclusions.",
+    UI_ADD = "Exclude", UI_REMOVE = "Remove exclusion", UI_NO_EXCLUSIONS = "No excluded names.",
+    UI_SAVED_NOTICE = "Saved: %s", UI_REMOVED_NOTICE = "Removed: %s", UI_ENTER_NAME = "Enter a spell or macro name first.",
+    UI_AUTOSAVE = "Preferences save automatically; use Save rule for rules. Combat changes apply after combat.",
+  },
+  ruRU = {
+    UI_ENABLED = "Включить PetAssist", UI_SUBTITLE = "Питомец атакует вместе с вашими способностями.",
+    UI_GENERAL = "Основные", UI_ADVANCED = "Дополнительно", UI_RULES = "Правила",
+    UI_MODE = "Когда питомец должен атаковать?", UI_HARM = "Атакующие способности (рекомендуется)",
+    UI_HARM_HINT = "Атаковать при заклинаниях урона и проклятиях; не реагировать на усиления и служебные способности.",
+    UI_ALL = "Все поддерживаемые способности и предметы", UI_ALL_HINT = "Атаковать также при усилениях, использовании камней и других служебных действиях.",
+    UI_CUSTOM = "Все поддерживаемые действия, кроме исключений", UI_CUSTOM_HINT = "Список исключений можно изменить на вкладке «Правила».",
+    UI_STANCE = "Стойка питомца", UI_RESTORE = "Устанавливать эту стойку перед отправкой в атаку",
+    UI_DEFENSIVE = "Защитная", UI_PASSIVE = "Пассивная",
+    UI_STANCE_HINT = "После отзыва следующая атака включает выбранную стойку, если эта настройка включена.",
+    UI_RECALL = "Клавиша отзыва", UI_RECALL_HINT = "Прекратить атаку и вернуться к вам. Escape отменяет назначение клавиши.",
+    UI_BIND = "Назначить клавишу", UI_UNBIND = "Убрать клавишу", UI_BINDING = "Текущая клавиша: %s",
+    UI_SAFETY = "Защита эффектов контроля", UI_SOFTCC = "Отзывать при Страхе, Изгнании и Замораживающей ловушке",
+    UI_SAFETY_HINT = "Питомец переходит в пассивную стойку и возвращается, чтобы не сбить эти эффекты.",
+    UI_MACROS = "Макросы без отдельного правила", UI_AUTO = "Автоматически (рекомендуется)",
+    UI_AUTO_HINT = "Распознавать простые макросы заклинаний. Не менять поведение сложных макросов.",
+    UI_ATTACK = "Отправить питомца в атаку", UI_RECALL_ACTION = "Отозвать питомца", UI_IGNORE = "Не менять поведение питомца",
+    UI_MACRO_HINT = "Макросы со своими командами питомцу всегда сохраняют управление им.",
+    UI_RULES_HINT = "Введите точное имя способности или макроса. Правило важнее общего режима и защиты контроля.",
+    UI_NAME = "Имя способности или макроса", UI_DEFAULT = "Поведение по умолчанию (удалить правило)",
+    UI_SAVE = "Сохранить правило", UI_SAVED = "Сохранённые правила — нажмите для изменения", UI_EMPTY = "Отдельных правил пока нет.",
+    UI_EXCLUSIONS = "Исключения (только для своего списка)", UI_EXCLUSIONS_HINT = "Введите имя, чтобы добавить или удалить исключение для этого режима.",
+    UI_ADD = "Исключить", UI_REMOVE = "Убрать исключение", UI_NO_EXCLUSIONS = "Исключений пока нет.",
+    UI_SAVED_NOTICE = "Сохранено: %s", UI_REMOVED_NOTICE = "Удалено: %s", UI_ENTER_NAME = "Сначала введите имя способности или макроса.",
+    UI_AUTOSAVE = "Настройки сохраняются сразу; правила — кнопкой «Сохранить». Изменения в бою применятся после боя.",
+  },
+}
+for language, values in pairs(UI_TRANSLATIONS) do
+  for key, value in pairs(values) do TRANSLATIONS[language][key] = value end
+end
+
 BuildLocale(TRANSLATIONS)
 
 local defaults = {
@@ -654,6 +713,10 @@ local ONCLICK_PET = [[
   if self:GetEffectiveAttribute("type", button) ~= "action" then return end
   local wantDown = self:GetEffectiveAttribute("useOnKeyDown", button)
   if wantDown == nil then wantDown = control:GetAttribute("pa_keydown") == 1 end
+  -- Blizzard's OnClick forwards /click and override-binding input as secure
+  -- mouse clicks, which only execute on release even when UseKeyDown is on.
+  -- TryUseActionButton handles native keybindings separately; we enter OnClick.
+  if self:GetAttribute("pa_native") then wantDown = false end
 
   local slot
   if self:GetAttribute("pa_native") and self:GetID() > 0 then
@@ -1116,239 +1179,140 @@ local function ModeLabel(mode)
 end
 
 local function RefreshOptionsUI()
-  if not optionsFrame then
-    return
-  end
-  local db = DB()
-  optionsFrame.enableCheck:SetChecked(db.enabled)
-  if optionsFrame.softCcCheck then
-    optionsFrame.softCcCheck:SetChecked(db.softCC ~= false)
-  end
-  if optionsFrame.restoreStanceCheck then
-    optionsFrame.restoreStanceCheck:SetChecked(db.restoreStance ~= false)
-  end
-  if optionsFrame.stanceButton then
-    optionsFrame.stanceButton:SetText(string.format(L.STANCE_BUTTON, db.stance))
-    optionsFrame.macroButton:SetText(string.format(L.MACRO_BUTTON, db.macroPolicy))
-    optionsFrame.howlCheck:SetChecked(db.softCCHowl)
-    optionsFrame.frostCheck:SetChecked(db.softCCFrostTrap)
-  end
-  optionsFrame.modeText:SetText(L.MODE_LABEL .. " " .. ModeLabel(db.mode))
-  if optionsFrame.modeHint then
-    if db.mode == MODE_ALL then
-      optionsFrame.modeHint:SetText(L.MODE_ALL_HINT)
-    elseif db.mode == MODE_CUSTOM then
-      optionsFrame.modeHint:SetText(L.MODE_CUSTOM_HINT)
-    else
-      optionsFrame.modeHint:SetText(L.MODE_HARM_HINT)
+  if not optionsFrame then return end
+  local f, db = optionsFrame, DB()
+  f.enableCheck:SetChecked(db.enabled)
+  f.softCcCheck:SetChecked(db.softCC ~= false)
+  f.restoreStanceCheck:SetChecked(db.restoreStance ~= false)
+  f.howlCheck:SetChecked(db.softCCHowl)
+  f.frostCheck:SetChecked(db.softCCFrostTrap)
+  for _, group in ipairs(f.choiceGroups) do
+    for value, check in pairs(group.buttons) do
+      check:SetChecked(value == group.get())
     end
   end
-  optionsFrame.recallText:SetText(L.RECALL_LABEL .. " " .. (db.recallKey or ("|cff888888" .. L.RECALL_UNBOUND .. "|r")))
-  local blCount = 0
-  for _ in pairs(db.blacklist) do
-    blCount = blCount + 1
-  end
-  optionsFrame.blText:SetText(string.format(
-    L.CUSTOM_BLACKLIST,
-    blCount
-  ))
+  f.recallText:SetText(string.format(L.UI_BINDING, db.recallKey or L.RECALL_UNBOUND))
+  f.updateRuleList()
 end
 
 local function CreateOptions()
-  if optionsFrame then
-    return optionsFrame
-  end
-
-  -- Canvas panel for Settings / Interface Options (fills the AddOns content area)
+  if optionsFrame then return optionsFrame end
   local f = CreateFrame("Frame", "PetAssistOptionsPanel")
   f.name = "PetAssist"
   f:Hide()
-
-  local title = f:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-  title:SetPoint("TOPLEFT", 16, -16)
-  title:SetText("PetAssist " .. VERSION)
-
-  local sub = f:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-  sub:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -6)
-  sub:SetText(L.SUBTITLE)
-
-  local enableCheck = CreateFrame("CheckButton", "PetAssistEnableCheck", f, "UICheckButtonTemplate")
-  enableCheck:SetPoint("TOPLEFT", sub, "BOTTOMLEFT", -4, -16)
-  local enableLabel = _G["PetAssistEnableCheckText"]
-  if enableLabel then
-    enableLabel:SetText(L.ENABLED)
+  f.choiceGroups = {}
+  local serial = 0
+  local function Text(parent, text, y, heading)
+    local label = parent:CreateFontString(nil, "ARTWORK", (heading == "title" and "GameFontNormalLarge") or (heading and "GameFontNormal" or "GameFontHighlightSmall"))
+    label:SetPoint("TOPLEFT", 4, -y)
+    label:SetWidth(500)
+    label:SetJustifyH("LEFT")
+    label:SetText(text)
+    return label
   end
-  enableCheck:SetScript("OnClick", function(self)
-    DB().enabled = self:GetChecked() and true or false
-    if DB().enabled then
-      Refresh(false)
-    else
-      if not InCombatLockdown() then
-        ClearOverrideBindings(binder)
-        header:SetAttribute("pa_enabled", false)
-        UnwrapButtons()
-      else
-        pendingRefresh = true
-      end
-      Print(L.ADDON_DISABLED)
-    end
-    RefreshOptionsUI()
-  end)
-  f.enableCheck = enableCheck
-
-  local softCcCheck = CreateFrame("CheckButton", "PetAssistSoftCcCheck", f, "UICheckButtonTemplate")
-  softCcCheck:SetPoint("TOPLEFT", enableCheck, "BOTTOMLEFT", 0, -4)
-  local softCcLabel = _G["PetAssistSoftCcCheckText"]
-  if softCcLabel then
-    softCcLabel:SetText(L.SOFTCC_GUARD)
+  local function Button(parent, text, x, y, width, click)
+    local b = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    b:SetPoint("TOPLEFT", x, -y)
+    b:SetSize(width, 26)
+    b:SetText(text)
+    b:SetScript("OnClick", click)
+    return b
   end
-  softCcCheck:SetScript("OnClick", function(self)
-    DB().softCC = self:GetChecked() and true or false
-    Refresh(false)
-    Print(DB().softCC and L.SOFTCC_ON or L.SOFTCC_OFF)
-    RefreshOptionsUI()
-  end)
-  f.softCcCheck = softCcCheck
-
-  local restoreStanceCheck = CreateFrame("CheckButton", "PetAssistRestoreStanceCheck", f, "UICheckButtonTemplate")
-  restoreStanceCheck:SetPoint("TOPLEFT", softCcCheck, "BOTTOMLEFT", 0, -4)
-  local restoreStanceLabel = _G["PetAssistRestoreStanceCheckText"]
-  if restoreStanceLabel then
-    restoreStanceLabel:SetText(L.RESTORE_STANCE)
-  end
-  restoreStanceCheck:SetScript("OnClick", function(self)
-    DB().restoreStance = self:GetChecked() and true or false
-    Refresh(false)
-    Print(DB().restoreStance and L.STANCE_RESTORE_ON or L.STANCE_RESTORE_OFF)
-    RefreshOptionsUI()
-  end)
-  f.restoreStanceCheck = restoreStanceCheck
-
-  local stanceButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-  stanceButton:SetSize(250, 24)
-  stanceButton:SetPoint("TOPLEFT", restoreStanceCheck, "BOTTOMLEFT", 4, -8)
-  stanceButton:SetScript("OnClick", function()
-    DB().stance = DB().stance == "defensive" and "passive" or "defensive"
-    Refresh(true)
-    RefreshOptionsUI()
-  end)
-  f.stanceButton = stanceButton
-
-  local macroButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-  macroButton:SetSize(250, 24)
-  macroButton:SetPoint("LEFT", stanceButton, "RIGHT", 8, 0)
-  macroButton:SetScript("OnClick", function()
-    local nextPolicy = { auto = "attack", attack = "recall", recall = "ignore", ignore = "auto" }
-    DB().macroPolicy = nextPolicy[DB().macroPolicy]
-    Refresh(true)
-    RefreshOptionsUI()
-  end)
-  f.macroButton = macroButton
-
-  local function OptionalCC(name, key, label, anchor, x, y)
-    local check = CreateFrame("CheckButton", name, f, "UICheckButtonTemplate")
-    check:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", x, y)
-    _G[name .. "Text"]:SetText(label)
-    check:SetScript("OnClick", function(self)
-      DB()[key] = self:GetChecked() and true or false
-      Refresh(true)
-      RefreshOptionsUI()
-    end)
+  local function Check(parent, text, y, click)
+    serial = serial + 1
+    local name = "PetAssistOption" .. serial
+    local check = CreateFrame("CheckButton", name, parent, "UICheckButtonTemplate")
+    check:SetPoint("TOPLEFT", 0, -y)
+    local label = _G[name .. "Text"]
+    label:SetText(text)
+    label:SetWidth(466)
+    label:SetJustifyH("LEFT")
+    check:SetScript("OnClick", click)
     return check
   end
-  f.howlCheck = OptionalCC("PetAssistHowlCheck", "softCCHowl", L.HOWL_OPTION, stanceButton, -4, -6)
-  f.frostCheck = OptionalCC("PetAssistFrostCheck", "softCCFrostTrap", L.FROST_OPTION, macroButton, -4, -6)
-
-  local modeText = f:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-  modeText:SetPoint("TOPLEFT", f.howlCheck, "BOTTOMLEFT", 4, -8)
-  modeText:SetWidth(520)
-  modeText:SetJustifyH("LEFT")
-  f.modeText = modeText
-
-  local function SetMode(mode)
-    DB().mode = mode
-    Refresh(false)
-    RefreshOptionsUI()
-    Print(string.format(L.MODE_CHANGED, ModeLabel(mode)))
+  local function Changed() Refresh(true); RefreshOptionsUI() end
+  local function Choices(parent, y, entries, get, set)
+    local group = {buttons = {}, get = get}
+    for _, entry in ipairs(entries) do
+      local value = entry[1]
+      group.buttons[value] = Check(parent, entry[2], y, function()
+        set(value)
+        RefreshOptionsUI()
+      end)
+      if entry[3] then Text(parent, entry[3], y + 32) end
+      y = y + (entry[3] and 74 or 36)
+    end
+    f.choiceGroups[#f.choiceGroups + 1] = group
+    return group
   end
-
-  local btnHarm = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-  btnHarm:SetSize(140, 24)
-  btnHarm:SetPoint("TOPLEFT", modeText, "BOTTOMLEFT", 0, -8)
-  btnHarm:SetText("harm")
-  btnHarm:SetScript("OnClick", function() SetMode(MODE_HARM) end)
-
-  local btnAll = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-  btnAll:SetSize(100, 24)
-  btnAll:SetPoint("LEFT", btnHarm, "RIGHT", 8, 0)
-  btnAll:SetText("all")
-  btnAll:SetScript("OnClick", function() SetMode(MODE_ALL) end)
-
-  local btnCustom = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-  btnCustom:SetSize(100, 24)
-  btnCustom:SetPoint("LEFT", btnAll, "RIGHT", 8, 0)
-  btnCustom:SetText("custom")
-  btnCustom:SetScript("OnClick", function() SetMode(MODE_CUSTOM) end)
-
-  local modeHint = f:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-  modeHint:SetPoint("TOPLEFT", btnHarm, "BOTTOMLEFT", 0, -8)
-  modeHint:SetWidth(520)
-  modeHint:SetJustifyH("LEFT")
-  f.modeHint = modeHint
-
-  local blText = f:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-  blText:SetPoint("TOPLEFT", modeHint, "BOTTOMLEFT", 0, -12)
-  blText:SetWidth(520)
-  blText:SetJustifyH("LEFT")
-  f.blText = blText
-
-  local ruleName = CreateFrame("EditBox", nil, f, "InputBoxTemplate")
-  ruleName:SetSize(215, 24)
-  ruleName:SetPoint("TOPLEFT", blText, "BOTTOMLEFT", 4, -12)
-  ruleName:SetAutoFocus(false)
-  ruleName:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
-  local ruleLabel = f:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-  ruleLabel:SetPoint("BOTTOMLEFT", ruleName, "TOPLEFT", 0, 2)
-  ruleLabel:SetText(L.RULE_NAME_HINT)
-  local ruleMode = "ignore"
-  local ruleButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-  ruleButton:SetSize(140, 24)
-  ruleButton:SetPoint("LEFT", ruleName, "RIGHT", 8, 0)
-  ruleButton:SetText(string.format(L.RULE_ACTION, ruleMode))
-  ruleButton:SetScript("OnClick", function(self)
-    local nextRule = { ignore = "attack", attack = "recall", recall = "clear", clear = "ignore" }
-    ruleMode = nextRule[ruleMode]
-    self:SetText(string.format(L.RULE_ACTION, ruleMode))
-  end)
-  local ruleApply = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-  ruleApply:SetSize(140, 24)
-  ruleApply:SetPoint("LEFT", ruleButton, "RIGHT", 8, 0)
-  ruleApply:SetText(L.RULE_APPLY)
-  ruleApply:SetScript("OnClick", function()
-    local name = ruleName:GetText():match("^%s*(.-)%s*$")
-    if name == "" then Print(L.RULE_USAGE); return end
-    DB().rules[name] = nil
-    DB().rules[name:lower()] = ruleMode ~= "clear" and ruleMode or nil
-    ruleName:ClearFocus()
+  local title = Text(f, "PetAssist " .. VERSION, 16, "title")
+  title:ClearAllPoints(); title:SetPoint("TOPLEFT", 16, -16)
+  local sub = Text(f, L.UI_SUBTITLE, 42)
+  sub:ClearAllPoints(); sub:SetPoint("TOPLEFT", 16, -42)
+  f.enableCheck = Check(f, L.UI_ENABLED, 66, function(self)
+    DB().enabled = self:GetChecked() and true or false
     Refresh(true)
-    Print(string.format(L.RULE_SAVED, name, ruleMode))
+    RefreshOptionsUI()
   end)
+  f.enableCheck:ClearAllPoints(); f.enableCheck:SetPoint("TOPLEFT", 12, -66)
 
-  f.ruleName, f.ruleButton, f.ruleApply = ruleName, ruleButton, ruleApply
-
-  local recallText = f:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-  recallText:SetPoint("TOPLEFT", ruleName, "BOTTOMLEFT", -4, -12)
-  recallText:SetWidth(520)
-  recallText:SetJustifyH("LEFT")
-  f.recallText = recallText
-
-  local bindBtn = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-  bindBtn:SetSize(160, 24)
-  bindBtn:SetPoint("TOPLEFT", recallText, "BOTTOMLEFT", 0, -8)
-  bindBtn:SetText(L.BIND_RECALL)
-  local binderFrame = CreateFrame("Frame", nil, f)
+  local pages, tabs = {}, {}
+  local function Page(key, height)
+    local scroll = CreateFrame("ScrollFrame", nil, f, "UIPanelScrollFrameTemplate")
+    scroll:SetPoint("TOPLEFT", 16, -144)
+    scroll:SetPoint("BOTTOMRIGHT", -36, 42)
+    local content = CreateFrame("Frame", nil, scroll)
+    content:SetSize(514, height)
+    scroll:SetScrollChild(content)
+    scroll:Hide()
+    pages[key] = scroll
+    return content
+  end
+  local general = Page("general", 650)
+  local advanced = Page("advanced", 570)
+  local rules = Page("rules", 650)
+  local function CancelCapture()
+    if f.recallCapture then
+      f.recallCapture:Hide()
+      f.recallCapture:EnableKeyboard(false)
+      f.bindButton:SetText(L.UI_BIND)
+    end
+  end
+  local function SelectTab(key)
+    CancelCapture()
+    for name, page in pairs(pages) do
+      if name == key then page:Show(); tabs[name]:Disable()
+      else page:Hide(); tabs[name]:Enable() end
+    end
+    f.activeTab = key
+  end
+  tabs.general = Button(f, L.UI_GENERAL, 16, 106, 158, function() SelectTab("general") end)
+  tabs.advanced = Button(f, L.UI_ADVANCED, 182, 106, 158, function() SelectTab("advanced") end)
+  tabs.rules = Button(f, L.UI_RULES, 348, 106, 158, function() SelectTab("rules") end)
+  f.selectTab = SelectTab
+  Text(general, L.UI_MODE, 8, true)
+  f.modeChoices = Choices(general, 32, {
+    {MODE_HARM, L.UI_HARM, L.UI_HARM_HINT},
+    {MODE_ALL, L.UI_ALL, L.UI_ALL_HINT},
+    {MODE_CUSTOM, L.UI_CUSTOM, L.UI_CUSTOM_HINT},
+  }, function() return DB().mode end, function(value) DB().mode = value; Changed() end)
+  Text(general, L.UI_STANCE, 266, true)
+  f.restoreStanceCheck = Check(general, L.UI_RESTORE, 290, function(self)
+    DB().restoreStance = self:GetChecked() and true or false; Changed()
+  end)
+  f.stanceChoices = Choices(general, 328, {
+    {"defensive", L.UI_DEFENSIVE}, {"passive", L.UI_PASSIVE},
+  }, function() return DB().stance end, function(value) DB().stance = value; Changed() end)
+  Text(general, L.UI_STANCE_HINT, 406)
+  Text(general, L.UI_RECALL, 462, true)
+  Text(general, L.UI_RECALL_HINT, 486)
+  f.recallText = Text(general, "", 532)
+  local bindBtn = Button(general, L.UI_BIND, 4, 558, 210)
+  f.bindButton = bindBtn
+  local binderFrame = CreateFrame("Frame", nil, general)
   binderFrame:Hide()
   f.recallCapture = binderFrame
+  binderFrame:SetScript("OnHide", function(self) self:EnableKeyboard(false) end)
   bindBtn:SetScript("OnClick", function(self)
     if InCombatLockdown() then
       Print(L.CANNOT_BIND_COMBAT)
@@ -1361,7 +1325,7 @@ local function CreateOptions()
     end
     binderFrame:SetScript("OnKeyDown", function(_, key)
       if key == "ESCAPE" then
-        self:SetText(L.BIND_RECALL)
+        self:SetText(L.UI_BIND)
         binderFrame:Hide()
         return
       end
@@ -1378,7 +1342,7 @@ local function CreateOptions()
       ReportRecallConflict(binding)
       DB().recallKey = binding
       Refresh(true)
-      self:SetText(L.BIND_RECALL)
+      self:SetText(L.UI_BIND)
       Print(string.format(L.RECALL_BOUND, binding))
       RefreshOptionsUI()
       binderFrame:Hide()
@@ -1386,37 +1350,114 @@ local function CreateOptions()
     binderFrame:Show()
   end)
 
-  local clearBind = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-  clearBind:SetSize(100, 24)
-  clearBind:SetPoint("LEFT", bindBtn, "RIGHT", 8, 0)
-  clearBind:SetText(L.CLEAR)
-  clearBind:SetScript("OnClick", function()
-    DB().recallKey = nil
-    Refresh(true)
-    Print(L.RECALL_CLEARED)
-    RefreshOptionsUI()
+
+  Button(general, L.UI_UNBIND, 224, 558, 210, function()
+    CancelCapture()
+    DB().recallKey = nil; Changed()
   end)
 
-  local refreshBtn = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-  refreshBtn:SetSize(120, 24)
-  refreshBtn:SetPoint("TOPLEFT", bindBtn, "BOTTOMLEFT", 0, -20)
-  refreshBtn:SetText(L.REFRESH)
-  refreshBtn:SetScript("OnClick", function() Refresh(false) end)
+  Text(advanced, L.UI_SAFETY, 8, true)
+  Text(advanced, L.UI_SAFETY_HINT, 34)
+  f.softCcCheck = Check(advanced, L.UI_SOFTCC, 86, function(self)
+    DB().softCC = self:GetChecked() and true or false; Changed()
+  end)
+  f.howlCheck = Check(advanced, L.HOWL_OPTION, 124, function(self)
+    DB().softCCHowl = self:GetChecked() and true or false; Changed()
+  end)
+  f.frostCheck = Check(advanced, L.FROST_OPTION, 162, function(self)
+    DB().softCCFrostTrap = self:GetChecked() and true or false; Changed()
+  end)
+  Text(advanced, L.UI_MACROS, 222, true)
+  f.macroChoices = Choices(advanced, 246, {
+    {"auto", L.UI_AUTO, L.UI_AUTO_HINT}, {"attack", L.UI_ATTACK},
+    {"recall", L.UI_RECALL_ACTION}, {"ignore", L.UI_IGNORE},
+  }, function() return DB().macroPolicy end, function(value) DB().macroPolicy = value; Changed() end)
+  Text(advanced, L.UI_MACRO_HINT, 446)
 
-  local hint = f:CreateFontString(nil, "ARTWORK", "GameFontDisable")
-  hint:SetPoint("TOPLEFT", refreshBtn, "BOTTOMLEFT", 0, -20)
-  hint:SetWidth(520)
-  hint:SetJustifyH("LEFT")
-  hint:SetText(L.SLASH_HINT .. "\n/pa rule attack|recall|ignore|clear Name\n" .. L.ESCAPE_OPTIONS)
-
+  Text(rules, L.UI_RULES_HINT, 8)
+  Text(rules, L.UI_NAME, 66, true)
+  local ruleName = CreateFrame("EditBox", nil, rules, "InputBoxTemplate")
+  ruleName:SetSize(480, 26); ruleName:SetPoint("TOPLEFT", 8, -90)
+  ruleName:SetAutoFocus(false)
+  ruleName:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+  f.ruleName = ruleName
+  local ruleMode = "ignore"
+  local policyLabels = {attack=L.UI_ATTACK, recall=L.UI_RECALL_ACTION, ignore=L.UI_IGNORE}
+  f.ruleChoices = Choices(rules, 126, {
+    {"attack", L.UI_ATTACK}, {"recall", L.UI_RECALL_ACTION},
+    {"ignore", L.UI_IGNORE}, {"clear", L.UI_DEFAULT},
+  }, function() return ruleMode end, function(value) ruleMode = value end)
+  f.ruleNotice = Text(rules, "", 306)
+  f.ruleApply = Button(rules, L.UI_SAVE, 4, 274, 210, function()
+    local name = ruleName:GetText():match("^%s*(.-)%s*$")
+    if name == "" then f.ruleNotice:SetText(L.UI_ENTER_NAME); return end
+    DB().rules[name] = nil
+    DB().rules[name:lower()] = ruleMode ~= "clear" and ruleMode or nil
+    ruleName:ClearFocus()
+    Changed()
+    f.ruleNotice:SetText(string.format(ruleMode == "clear" and L.UI_REMOVED_NOTICE or L.UI_SAVED_NOTICE, name))
+  end)
+  Text(rules, L.UI_SAVED, 348, true)
+  local empty = Text(rules, L.UI_EMPTY, 380)
+  local rows = {}
+  local exclusions = CreateFrame("Frame", nil, rules)
+  exclusions:SetSize(514, 220)
+  Text(exclusions, L.UI_EXCLUSIONS, 0, true)
+  Text(exclusions, L.UI_EXCLUSIONS_HINT, 26)
+  local excludedName = CreateFrame("EditBox", nil, exclusions, "InputBoxTemplate")
+  excludedName:SetSize(480, 26); excludedName:SetPoint("TOPLEFT", 8, -72)
+  excludedName:SetAutoFocus(false)
+  excludedName:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+  f.excludedName = excludedName
+  local exclusionNotice = Text(exclusions, "", 140)
+  local excludedText = Text(exclusions, "", 172)
+  local function Exclude(add)
+    local name = excludedName:GetText():match("^%s*(.-)%s*$")
+    if name == "" then exclusionNotice:SetText(L.UI_ENTER_NAME); return end
+    DB().blacklist[name] = nil
+    DB().blacklist[name:lower()] = add and true or nil
+    excludedName:ClearFocus(); Changed()
+    exclusionNotice:SetText(string.format(add and L.UI_SAVED_NOTICE or L.UI_REMOVED_NOTICE, name))
+  end
+  f.excludeAdd = Button(exclusions, L.UI_ADD, 4, 106, 210, function() Exclude(true) end)
+  f.excludeRemove = Button(exclusions, L.UI_REMOVE, 224, 106, 210, function() Exclude(false) end)
+  f.updateRuleList = function()
+    local names = {}
+    for name in pairs(DB().rules) do names[#names + 1] = name end
+    table.sort(names)
+    for i, name in ipairs(names) do
+      if not rows[i] then rows[i] = Button(rules, "", 4, 378 + (i - 1) * 32, 488) end
+      local row = rows[i]
+      row:SetText(name .. " — " .. (policyLabels[DB().rules[name]] or DB().rules[name]))
+      row:SetScript("OnClick", function()
+        ruleName:SetText(name); ruleMode = DB().rules[name]
+        f.ruleNotice:SetText(""); RefreshOptionsUI()
+        pages.rules:SetVerticalScroll(0)
+      end)
+      row:Show()
+    end
+    for i = #names + 1, #rows do rows[i]:Hide() end
+    if #names == 0 then empty:Show() else empty:Hide() end
+    f.ruleRows = rows
+    local bottom = 388 + math.max(1, #names) * 32 + 20
+    exclusions:ClearAllPoints(); exclusions:SetPoint("TOPLEFT", 0, -bottom)
+    local blocked = {}
+    for name in pairs(DB().blacklist) do blocked[#blocked + 1] = name end
+    table.sort(blocked)
+    excludedText:SetText(#blocked > 0 and table.concat(blocked, ", ") or L.UI_NO_EXCLUSIONS)
+    -- Measure after setting the list so arbitrarily long exclusions remain scrollable.
+    local listHeight = excludedText:GetStringHeight()
+    rules:SetHeight(bottom + 180 + listHeight + 24)
+  end
+  local footer = f:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+  footer:SetPoint("BOTTOMLEFT", 16, 12); footer:SetPoint("BOTTOMRIGHT", -16, 12)
+  footer:SetJustifyH("LEFT"); footer:SetText(L.UI_AUTOSAVE)
   f:SetScript("OnShow", RefreshOptionsUI)
   f:SetScript("OnHide", function()
-    binderFrame:Hide()
-    binderFrame:EnableKeyboard(false)
-    bindBtn:SetText(L.BIND_RECALL)
+    CancelCapture(); ruleName:ClearFocus(); excludedName:ClearFocus()
   end)
-
   optionsFrame = f
+  SelectTab("general")
   RefreshOptionsUI()
   return f
 end

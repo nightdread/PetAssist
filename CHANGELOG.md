@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.6.1
+
+- Fix blocked casts on Blizzard action bars with ActionButtonUseKeyDown enabled: forward the nested native click on release, matching Blizzard's secure mouse dispatch.
+- Correct the regression fixture to model Blizzard OnClick separately from direct secure key input; reproduce the 1.6.0 failure before applying the fix.
+
+- Reorganize settings into General, Advanced and Rules tabs with scrollable pages.
+- Use descriptive English/Russian labels and explicit selections instead of cycling through command values.
+- Show saved rules for editing and add custom exclusion management without chat commands.
+- Show inline save feedback and explain automatic saving and deferred combat changes.
+- Cancel Recall key capture when switching tabs.
+
 ## 1.6.0
 
 ### Fixes

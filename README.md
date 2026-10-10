@@ -78,7 +78,9 @@ Toggle: options checkbox or `/pa stance on|off`.
 
 ### Spell and macro rules
 
-Use the rule editor in options, or the localized spell name / exact macro name:
+Settings are grouped into **General** (attack mode, stance, Recall key), **Advanced** (crowd-control protection and macro behavior), and **Rules** (spell/macro overrides and custom exclusions). Pages scroll on smaller settings windows. Choices show the selected value; changes apply automatically, or after combat ends.
+
+In the Rules tab, enter a localized spell name / exact macro name, select a behavior and save. Click a saved rule to edit it; choose default behavior to remove it. Custom exclusions only apply in custom mode. You can also use chat commands:
 
 ```text
 /pa rule recall Fear macro
@@ -144,8 +146,8 @@ Classic Era (`## Interface: 11509`). Warlock / Hunter pets.
 Releases upload automatically when you push a version tag:
 
 ```bash
-git tag v1.6.0
-git push origin v1.6.0
+git tag v1.6.1
+git push origin v1.6.1
 ```
 
 Requires GitHub secret `CF_API_KEY` and `## X-Curse-Project-ID` in the `.toc`.
@@ -158,4 +160,4 @@ python3 -m pip install lupa==2.8
 python3 tests/run.py
 ```
 
-The suite loads the full addon in Lua 5.1 with mocked WoW APIs, checks action dispatch, macro preservation, pet policies, paging, settings, key phases, and class/locale initialization. Restricted snippets receive only allowed frame methods. It does **not** emulate Blizzard taint propagation or validate `/click` macro execution in a real client. Run the [in-game checklist](tests/IN_GAME.md) before releasing 1.6.0.
+The suite loads the full addon in Lua 5.1 with mocked WoW APIs, checks action dispatch, macro preservation, pet policies, paging, settings, key phases, and class/locale initialization. Restricted snippets receive only allowed frame methods. It does **not** emulate Blizzard taint propagation or validate `/click` macro execution in a real client. Run the [in-game checklist](tests/IN_GAME.md) before releasing.

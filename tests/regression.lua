@@ -58,7 +58,10 @@ function Frame:Click(button, down, mouse)
   end
   local useDown = self:GetEffectiveAttribute("useOnKeyDown", button)
   if useDown == nil then useDown = keyDown end
-  if down == (not mouse and useDown) then
+  -- Blizzard's ActionBarActionButtonMixin:OnClick always forwards these
+  -- clicks (including /click and override bindings) as secure mouse input.
+  -- Its native keybindings use a separate TryUseActionButton path.
+  if down == (not (self.native or mouse) and useDown) then
     if self:GetEffectiveAttribute("type", button) == "action" then
       executed[#executed + 1] = self:CalculateAction()
     elseif self:GetEffectiveAttribute("type", button) == "macro" then
@@ -86,9 +89,14 @@ function Frame:Hide()
   if shown and self.scripts.OnHide then self.scripts.OnHide(self) end
 end
 function Frame:EnableKeyboard(value) self.keyboard = value end
+function Frame:Enable() self.disabled = false end
+function Frame:Disable() self.disabled = true end
+function Frame:SetScrollChild(child) self.scrollChild = child end
+function Frame:SetVerticalScroll(value) self.scrollOffset = value end
+function Frame:GetStringHeight() return 28 end
 function Frame:Show() self.shown = true; if self.scripts.OnShow then self.scripts.OnShow(self) end end
 for _, method in ipairs({"RegisterForClicks", "RegisterForDrag", "RegisterEvent", "SetPoint", "SetSize",
-  "SetWidth", "SetJustifyH", "SetPropagateKeyboardInput", "ClearAllPoints",
+  "SetWidth", "SetHeight", "SetJustifyH", "SetPropagateKeyboardInput", "ClearAllPoints",
   "SetFrameStrata", "SetAutoFocus", "ClearFocus"}) do Frame[method] = function() end end
 function CreateFrame(kind, name, parent, template)
   local f = setmetatable({name=name, parent=parent, attrs={}, refs={}, scripts={}}, Frame)
@@ -190,6 +198,21 @@ check("native mouse-up preserves cast and pet command with key-down enabled", fu
   ActionButton2:Click("LeftButton",false,true)
   assert(#petCommands==1 and #executed==1 and executed[1]==2)
 end)
+check("Blizzard bar casts once for mouse and bound keys with either CVar phase", function()
+  for _, phase in ipairs({true, false}) do
+    keyDown=phase; event("CVAR_UPDATE", "ActionButtonUseKeyDown")
+    for _, key in ipairs({"1", "2", "SHIFT-1"}) do
+      click(key); assert(#executed==1 and #petCommands==1)
+    end
+    for _, btn in ipairs({ActionButton1, ActionButton2}) do
+      wipe(executed); wipe(petCommands)
+      btn:Click("LeftButton",true,true); btn:Click("LeftButton",false,true)
+      assert(#executed==1 and #petCommands==1)
+      assert(btn:GetAttribute("*macrotext-PetAssist"):match(" 0$"))
+    end
+  end
+  keyDown=true; event("CVAR_UPDATE", "ActionButtonUseKeyDown")
+end)
 check("damage restores stance for both keys and mouse", function()
   click("2"); assert(petCommands[1]:find("/petdefensive",1,true))
   wipe(petCommands); extra:Click("LeftButton", true); extra:Click("LeftButton",false)
@@ -264,7 +287,7 @@ check("key-up configuration changed in combat is reconciled after combat", funct
   combat=false; event("PLAYER_REGEN_ENABLED"); click("2")
   assert(#executed==1 and #petCommands==1)
 end)
-check("per-button click phase controls helper click phase", function()
+check("Blizzard secure mouse release takes priority over per-button key-down", function()
   ActionButton2:SetAttribute("useOnKeyDown",true); click("2")
   assert(#executed==1 and #petCommands==1)
   ActionButton2:SetAttribute("useOnKeyDown",nil)
@@ -305,24 +328,64 @@ check("rule editor applies and clears same policy as commands", function()
   f.ruleName:SetText("Corruption")
   f.ruleApply.scripts.OnClick()
   assert(PetAssistDB.rules.corruption=="ignore")
-  for i=1,3 do f.ruleButton.scripts.OnClick(f.ruleButton) end
+  f.ruleChoices.buttons.clear.scripts.OnClick()
   f.ruleApply.scripts.OnClick()
   assert(PetAssistDB.rules.corruption==nil)
 end)
 check("options toggle stance, macro policy and optional CC", function()
   local f=PetAssistOptionsPanel
   local before=PetAssistDB.stance
-  f.stanceButton.scripts.OnClick(); assert(PetAssistDB.stance~=before)
-  f.macroButton.scripts.OnClick(); assert(PetAssistDB.macroPolicy=="attack")
+  local wanted=before=="defensive" and "passive" or "defensive"
+  f.stanceChoices.buttons[wanted].scripts.OnClick(); assert(PetAssistDB.stance==wanted)
+  assert(f.stanceChoices.buttons[wanted]:GetChecked())
+  assert(not f.stanceChoices.buttons[before]:GetChecked())
+  f.macroChoices.buttons.attack.scripts.OnClick(); assert(PetAssistDB.macroPolicy=="attack")
   f.howlCheck:SetChecked(false); f.howlCheck.scripts.OnClick(f.howlCheck)
   assert(PetAssistDB.softCCHowl==false)
   command("macros auto")
+end)
+check("saved rules can be reopened and empty input does not create a rule", function()
+  local f=PetAssistOptionsPanel
+  f.ruleName:SetText("  Corruption  ")
+  f.ruleChoices.buttons.attack.scripts.OnClick(); f.ruleApply.scripts.OnClick()
+  local found=false
+  for _, row in ipairs(f.ruleRows) do
+    if row.shown and row.text:find("corruption",1,true) then
+      row.scripts.OnClick(); found=true; break
+    end
+  end
+  assert(found and f.ruleName:GetText()=="corruption")
+  assert(f.ruleChoices.buttons.attack:GetChecked())
+  f.ruleName:SetText("  "); f.ruleApply.scripts.OnClick()
+  assert(PetAssistDB.rules[""]==nil and PetAssistDB.rules.corruption=="attack")
+  f.ruleName:SetText("Corruption")
+  f.ruleChoices.buttons.clear.scripts.OnClick(); f.ruleApply.scripts.OnClick()
+end)
+check("custom exclusions can be added and removed in settings", function()
+  local f=PetAssistOptionsPanel
+  f.excludedName:SetText("  Life Tap  "); f.excludeAdd.scripts.OnClick()
+  assert(PetAssistDB.blacklist["life tap"] and not PetAssistDB.blacklist["Life Tap"])
+  actions[1]={"spell",1454}
+  f.modeChoices.buttons.custom.scripts.OnClick()
+  click("1"); assert(#petCommands==0)
+  f.excludeRemove.scripts.OnClick(); assert(not PetAssistDB.blacklist["life tap"])
+  command("mode harm")
+end)
+check("switching tabs cancels key capture and keeps preferences", function()
+  local f=PetAssistOptionsPanel
+  f.selectTab("general"); f.bindButton.scripts.OnClick(f.bindButton)
+  assert(f.recallCapture.shown and f.recallCapture.keyboard)
+  local stance=PetAssistDB.stance
+  f.selectTab("rules")
+  assert(f.activeTab=="rules" and not f.recallCapture.shown and not f.recallCapture.keyboard)
+  assert(PetAssistDB.stance==stance)
+  f.selectTab("general")
 end)
 check("closing options stops Recall key capture", function()
   local f=PetAssistOptionsPanel
   f:Show()
   for _, frame in ipairs(frames) do
-    if frame.text=="Bind Recall" and frame.scripts.OnClick then frame.scripts.OnClick(frame); break end
+    if frame.text=="Assign key" and frame.scripts.OnClick then frame.scripts.OnClick(frame); break end
   end
   assert(f.recallCapture.shown and f.recallCapture.keyboard)
   f:Hide()
