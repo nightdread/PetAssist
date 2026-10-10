@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.6.2
+
+### Fixes
+- Fix damage abilities sending the pet to attack without casting the player's spell. Execute the original action slot through a separate secure button instead of clicking the same button recursively.
+- Resolve the current action slot at click time, preserve native spell ranks and macro bodies, and forward targeting attributes.
+- Leave native clicks untouched if the secure delegate is unavailable and report failures to remove click wrappers.
+
+### Diagnostics
+- Add opt-in recording with `/pa debug on|off|clear` and a copyable `/pa report [ButtonName]` window, also available in Advanced settings.
+- Include client/build, locale/class, settings, bar addons, action-slot decisions, click attempts, player spell outcomes, game error IDs and blocked/forbidden addon actions.
+- Keep the last 100 events across reloads in a separate per-character diagnostic store. Reports are shared manually; character names, chat, macro bodies/names and custom rule names are not recorded.
+- Observe clicks through read-only hooks. Debug controls and reports do not change protected action attributes in combat. Attach Lua errors separately from the game's error viewer.
+
+### Validation
+- Pass 74 automated Lua 5.1 regression, initialization, settings migration and diagnostic persistence checks, including checks against the packaged addon.
+- Confirmed in Classic Era 1.15.9 (build 70003), enUS Warlock with Blizzard bars: Shadow Bolt, Corruption and Curse of Agony cast successfully, and the pet attacks.
+- Broader Hunter, macro and third-party bar scenarios remain covered by the in-game checklist rather than this limited client confirmation.
+
 ## 1.6.1
 
 - Fix blocked casts on Blizzard action bars with ActionButtonUseKeyDown enabled: forward the nested native click on release, matching Blizzard's secure mouse dispatch.

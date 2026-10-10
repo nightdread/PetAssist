@@ -1,16 +1,16 @@
 --[[
-  PetAssist 1.6.1 — Classic Era
+  PetAssist 1.6.2 — Classic Era
 
-  Secure OnClick selects a pet command, then /click executes the original button.
-  Never copy spells or macro bodies: preserve ranks, conditionals,
-  targeting, and action-bar paging. Slot policies are prepared out of combat.
+  Secure OnClick selects a pet command and delegates the current action slot
+  to a separate SecureActionButton. Never /click the active macro button.
+  Slot policies are prepared out of combat; slots are selected at click time.
 ]]
 
 local ADDON_NAME = ...
 local VERSION = "@project-version@"
 -- Unpackaged working copy (placeholder not replaced by packager)
 if VERSION:find("@", 1, true) then
-  VERSION = "1.6.1"
+  VERSION = "1.6.2"
 end
 
 local MODE_ALL = "all"
@@ -69,7 +69,7 @@ local TRANSLATIONS = {
     RECALL_CONFLICT = "Recall overrides %s on %s.",
     TEST_BAD_BUTTON = "Unknown action button: %s",
     TEST_DETAIL = "%s | slot=%s | type=%s | id=%s | name=%s | policy=%s | prepared=%s | reason=%s | pending=%s | combat=%s",
-    TEST_NATIVE = "Original button executes unchanged | wrapped=%s | stance=%s | macros=%s",
+    TEST_NATIVE = "Native action slot delegate | wrapped=%s | stance=%s | macros=%s",
     SLASH_HELP = "Commands: on|off|refresh|test [ButtonName]|status|config|mode|softcc|stance|macros|howl|frost|rule|rules|block|unblock|recall",
     OPTION_USAGE = "Usage: /pa %s on|off",
     MACRO_USAGE = "Usage: /pa macros auto|attack|recall|ignore",
@@ -148,7 +148,7 @@ local TRANSLATIONS = {
     RECALL_CONFLICT = "Отзыв перекрывает %s на клавише %s.",
     TEST_BAD_BUTTON = "Неизвестная кнопка: %s",
     TEST_DETAIL = "%s | слот=%s | тип=%s | ID=%s | имя=%s | правило=%s | подготовлено=%s | причина=%s | ожидает=%s | бой=%s",
-    TEST_NATIVE = "Исходная кнопка выполняется без изменений | подключена=%s | стойка=%s | макросы=%s",
+    TEST_NATIVE = "Отдельная кнопка исходного слота | подключена=%s | стойка=%s | макросы=%s",
     SLASH_HELP = "Команды: on|off|refresh|test [ИмяКнопки]|status|config|mode|softcc|stance|macros|howl|frost|rule|rules|block|unblock|recall",
     OPTION_USAGE = "Использование: /pa %s on|off",
     MACRO_USAGE = "Использование: /pa macros auto|attack|recall|ignore",
@@ -487,6 +487,14 @@ local TRANSLATIONS = {
 -- Settings use plain labels; command values remain stable for saved profiles.
 local UI_TRANSLATIONS = {
   enUS = {
+    UNWRAP_FAILED = "Could not restore %s: %s",
+    UI_DEBUG = "Troubleshooting", UI_DEBUG_ENABLE = "Record diagnostic events (off by default)",
+    UI_DEBUG_HINT = "Enable, reproduce the issue, then copy a report. Keeps the last 100 entries after /reload. No character names or macro text.",
+    UI_REPORT = "Copy diagnostic report", UI_DEBUG_CLEAR = "Clear log",
+    DEBUG_ON = "Debug recording enabled. Reproduce the issue, then use /pa report.",
+    DEBUG_OFF = "Debug recording disabled; the existing log is kept.", DEBUG_CLEARED = "Diagnostic log cleared.",
+    DEBUG_USAGE = "Usage: /pa debug on|off|clear. Copy a report: /pa report [ButtonName]",
+    REPORT_TITLE = "PetAssist — diagnostic report", REPORT_COPY = "Click the text, select all (Ctrl+A / Cmd+A), copy and send it with the steps to reproduce.",
     UI_ENABLED = "Enable PetAssist", UI_SUBTITLE = "Send your pet to attack when you use abilities.",
     UI_GENERAL = "General", UI_ADVANCED = "Advanced", UI_RULES = "Rules",
     UI_MODE = "When should your pet attack?", UI_HARM = "Offensive abilities (recommended)",
@@ -513,6 +521,14 @@ local UI_TRANSLATIONS = {
     UI_AUTOSAVE = "Preferences save automatically; use Save rule for rules. Combat changes apply after combat.",
   },
   ruRU = {
+    UNWRAP_FAILED = "Не удалось восстановить %s: %s",
+    UI_DEBUG = "Диагностика", UI_DEBUG_ENABLE = "Записывать события отладки (по умолчанию выключено)",
+    UI_DEBUG_HINT = "Включите запись, повторите проблему и скопируйте отчёт. Последние 100 записей сохраняются после /reload. Без имён персонажей и текста макросов.",
+    UI_REPORT = "Скопировать отчёт", UI_DEBUG_CLEAR = "Очистить журнал",
+    DEBUG_ON = "Отладка включена. Повторите проблему и откройте /pa report.",
+    DEBUG_OFF = "Отладка выключена; записанный журнал сохранён.", DEBUG_CLEARED = "Журнал отладки очищен.",
+    DEBUG_USAGE = "Использование: /pa debug on|off|clear. Отчёт: /pa report [ИмяКнопки]",
+    REPORT_TITLE = "PetAssist — отчёт об ошибке", REPORT_COPY = "Нажмите на текст, выделите всё (Ctrl+A / Cmd+A), скопируйте и отправьте вместе с шагами воспроизведения.",
     UI_ENABLED = "Включить PetAssist", UI_SUBTITLE = "Питомец атакует вместе с вашими способностями.",
     UI_GENERAL = "Основные", UI_ADVANCED = "Дополнительно", UI_RULES = "Правила",
     UI_MODE = "Когда питомец должен атаковать?", UI_HARM = "Атакующие способности (рекомендуется)",
@@ -547,6 +563,7 @@ BuildLocale(TRANSLATIONS)
 
 local defaults = {
   enabled = true,
+  debug = false,         -- opt-in, bounded diagnostics; never records macro text
   mode = MODE_HARM,       -- all | harm | custom
   softCC = true,          -- on Fear/Banish/… pull pet back (passive+follow)
   restoreStance = true,   -- restore pet stance (e.g. /petdefensive) before /petattack on normal spells
@@ -690,6 +707,7 @@ recallBtn:SetAttribute("*macrotext*", SOFTCC)
 recallBtn:Hide()
 
 local wrapped = {}
+local actionDelegates = {}
 local blockedNames = {}
 local softCcNames = {}
 local pendingRefresh = false
@@ -704,11 +722,6 @@ local refreshDebounceTimer
 -- The native OnClick decides which physical phase fires (including mouse-up).
 -- All policy attributes are written out of combat; paging itself remains secure.
 local ONCLICK_PET = [[
-  -- /click below re-enters this wrapper once with the original mouse button.
-  if self:GetAttribute("pa_reentry") then
-    self:SetAttribute("pa_reentry", nil)
-    return
-  end
   if not control:GetAttribute("pa_enabled") then return end
   if self:GetEffectiveAttribute("type", button) ~= "action" then return end
   local wantDown = self:GetEffectiveAttribute("useOnKeyDown", button)
@@ -732,13 +745,21 @@ local ONCLICK_PET = [[
   if allow == 1 then text = control:GetAttribute("pa_assist_text")
   elseif allow == 2 then text = control:GetAttribute("pa_recall_text") end
   if not text then return end
-  -- Restricted frame handles have no Click method. Let SecureActionButton's
-  -- native macro action run /click, preserving the original button and phase.
+  -- Do not re-enter the frame whose macro is executing. A distinct secure
+  -- action button runs the current slot through UseAction, without rebuilding
+  -- casts or user macro text. Missing delegates leave native execution intact.
+  local delegate = control:GetFrameRef("pa_action_" .. self:GetName())
+  if not delegate then return end
+  delegate:SetAttribute("action", slot)
+  delegate:SetAttribute("useOnKeyDown", wantDown)
+  delegate:SetAttribute("*unit*", self:GetEffectiveAttribute("unit", button))
+  delegate:SetAttribute("checkselfcast", self:GetEffectiveAttribute("checkselfcast", button))
+  delegate:SetAttribute("checkfocuscast", self:GetEffectiveAttribute("checkfocuscast", button))
+  delegate:SetAttribute("checkmouseovercast", self:GetEffectiveAttribute("checkmouseovercast", button))
   self:SetAttribute("*type-PetAssist", "macro")
   self:SetAttribute("*macro-PetAssist", "")
-  self:SetAttribute("*macrotext-PetAssist", text .. "\n/click " .. self:GetName()
+  self:SetAttribute("*macrotext-PetAssist", text .. "\n/click " .. delegate:GetName()
     .. " " .. button .. (wantDown and " 1" or " 0"))
-  self:SetAttribute("pa_reentry", true)
   return "PetAssist", true
 ]]
 
@@ -784,6 +805,7 @@ local function DB()
     and PetAssistDB.macroPolicy ~= "recall" and PetAssistDB.macroPolicy ~= "ignore" then
     PetAssistDB.macroPolicy = "auto"
   end
+  PetAssistDB.debug = PetAssistDB.debug == true
   return PetAssistDB
 end
 
@@ -977,6 +999,165 @@ local function SlotFromButton(btn)
   return btn:GetAttribute("action") or btn.action
 end
 
+-- Diagnostics are read-only observers. No protected calls or frame attributes
+-- are changed by recording or generating reports, including during combat.
+local DEBUG_LIMIT = 100
+local debugStore, reportFrame
+local observedButtons = {}
+local function Diagnostics()
+  if debugStore then return debugStore end
+  if type(PetAssistDebugDB) ~= "table" then PetAssistDebugDB = {} end
+  debugStore = PetAssistDebugDB
+  local entries = {}
+  if type(debugStore.entries) == "table" then
+    for _, entry in ipairs(debugStore.entries) do
+      if type(entry) == "string" then
+        entries[#entries + 1] = entry:sub(1, 256)
+        if #entries > DEBUG_LIMIT then table.remove(entries, 1) end
+      end
+    end
+  end
+  debugStore.entries = entries
+  return debugStore
+end
+local function DebugRecord(kind, detail)
+  if not DB().debug then return end
+  local entries = Diagnostics().entries
+  local now = GetServerTime and GetServerTime() or (GetTime and math.floor(GetTime()) or 0)
+  entries[#entries + 1] = (tostring(now) .. " " .. kind .. " " .. (detail or "")):sub(1, 256)
+  if #entries > DEBUG_LIMIT then table.remove(entries, 1) end
+end
+local function Identifier(value)
+  return tostring(value or "unknown"):gsub("[^%w_.%-]", "?"):sub(1, 64)
+end
+local function ActionSummary(slot)
+  local kind, id
+  if slot then kind, id = GetActionInfo(slot) end
+  -- Macro names and bodies are deliberately omitted, including rule names.
+  return "slot=" .. tostring(slot) .. " type=" .. Identifier(kind) .. " id=" .. Identifier(id)
+end
+local function ObserveButton(btn, delegate)
+  if observedButtons[btn] then return end
+  observedButtons[btn] = true
+  btn:HookScript("PostClick", function(self, button, down)
+    if not DB().debug then return end
+    local slot = SlotFromButton(self)
+    local policy = slot and header:GetAttribute("pa_slot_" .. slot)
+    DebugRecord(delegate and "delegate-click" or "bar-click",
+      Identifier(self:GetName()) .. " button=" .. Identifier(button)
+      .. " down=" .. tostring(down) .. " " .. ActionSummary(slot)
+      .. " policy=" .. tostring(policy) .. " enabled=" .. tostring(DB().enabled)
+      .. " combat=" .. tostring(InCombatLockdown()))
+  end)
+end
+local function SetDebugEnabled(enabled)
+  if enabled then
+    DB().debug = true
+    DebugRecord("debug", "on version=" .. VERSION .. " locale=" .. locale)
+  else
+    DebugRecord("debug", "off")
+    DB().debug = false
+  end
+  Print(enabled and L.DEBUG_ON or L.DEBUG_OFF)
+end
+local function ClearDebugLog()
+  Diagnostics().entries = {}
+  Print(L.DEBUG_CLEARED)
+end
+local function CountEntries(values)
+  local count = 0
+  for _ in pairs(values) do count = count + 1 end
+  return count
+end
+local function BuildDebugReport(buttonName)
+  local db = DB()
+  local buildVersion, build, _, interface = "unknown", "unknown", nil, "unknown"
+  if GetBuildInfo then buildVersion, build, _, interface = GetBuildInfo() end
+  local _, class = UnitClass("player")
+  local lines = {
+    "PetAssist report format=1 version=" .. VERSION,
+    "client=" .. Identifier(buildVersion) .. " build=" .. Identifier(build) .. " interface=" .. tostring(interface),
+    "locale=" .. locale .. " class=" .. Identifier(class),
+    "enabled=" .. tostring(db.enabled) .. " secure-enabled=" .. tostring(header:GetAttribute("pa_enabled")),
+    "debug=" .. tostring(db.debug) .. " combat=" .. tostring(InCombatLockdown()) .. " pending=" .. tostring(pendingRefresh),
+    "mode=" .. db.mode .. " softCC=" .. tostring(db.softCC) .. " howl=" .. tostring(db.softCCHowl) .. " frost=" .. tostring(db.softCCFrostTrap),
+    "restoreStance=" .. tostring(db.restoreStance) .. " stance=" .. db.stance .. " macros=" .. db.macroPolicy,
+    "keydown=" .. tostring(UseKeyDown()) .. " recallBound=" .. tostring(db.recallKey ~= nil),
+    "rules=" .. CountEntries(db.rules) .. " exclusions=" .. CountEntries(db.blacklist) .. " wrapped=" .. CountEntries(wrapped),
+    "petExists=" .. tostring(UnitExists and UnitExists("pet") or false),
+    "targetHostile=" .. tostring(UnitCanAttack and UnitCanAttack("player", "target") or false),
+    "No character names, chat, macro bodies, or custom rule names are recorded.",
+    "Click records show dispatch attempts, not proof of a successful cast.",
+    "Lua error text is not collected; attach the game's Lua error separately if available.",
+  }
+  lines[#lines + 1] = "[bar addons]"
+  for _, name in ipairs({"Dominos", "Bartender4", "ElvUI", "BugGrabber", "BugSack"}) do
+    local loaded = C_AddOns and C_AddOns.IsAddOnLoaded or IsAddOnLoaded
+    local metadata = C_AddOns and C_AddOns.GetAddOnMetadata or GetAddOnMetadata
+    lines[#lines + 1] = name .. " loaded=" .. tostring(loaded and loaded(name) or false)
+      .. " version=" .. Identifier(metadata and metadata(name, "Version"))
+  end
+  lines[#lines + 1] = "[focused button]"
+  buttonName = buttonName or "ActionButton1"
+  local btn = _G[buttonName]
+  if btn and type(btn.GetAttribute) == "function" and type(btn.GetName) == "function" then
+    local slot = SlotFromButton(btn)
+    local kind, id
+    if slot then kind, id = GetActionInfo(slot) end
+    local policy, reason = ResolveAction(kind, id)
+    local delegate = actionDelegates[btn]
+    lines[#lines + 1] = Identifier(buttonName) .. " " .. ActionSummary(slot)
+    lines[#lines + 1] = "decision=" .. policy .. " prepared=" .. tostring(slot and header:GetAttribute("pa_slot_" .. slot)) .. " reason=" .. reason
+    lines[#lines + 1] = "wrapped=" .. tostring(wrapped[btn] == true) .. " delegate=" .. Identifier(delegate and delegate:GetName())
+    if delegate then lines[#lines + 1] = "delegate " .. ActionSummary(delegate:GetAttribute("action")) end
+  else lines[#lines + 1] = "unknown button=" .. Identifier(buttonName) end
+  lines[#lines + 1] = "[occupied slots]"
+  for slot = 1, 120 do
+    local kind, id = GetActionInfo(slot)
+    if kind then
+      local policy, reason = ResolveAction(kind, id)
+      lines[#lines + 1] = ActionSummary(slot) .. " decision=" .. policy
+        .. " prepared=" .. tostring(header:GetAttribute("pa_slot_" .. slot)) .. " reason=" .. reason
+    end
+  end
+  lines[#lines + 1] = "[recent events: " .. #Diagnostics().entries .. "/" .. DEBUG_LIMIT .. "]"
+  for _, entry in ipairs(Diagnostics().entries) do lines[#lines + 1] = entry end
+  lines[#lines + 1] = "[end of report]"
+  return table.concat(lines, "\n")
+end
+local function OpenDebugReport(buttonName)
+  if not reportFrame then
+    local f = CreateFrame("Frame", "PetAssistDebugReport", UIParent, "BackdropTemplate")
+    f:SetSize(590, 480); f:SetPoint("CENTER"); f:SetFrameStrata("DIALOG")
+    f:SetBackdrop({bgFile="Interface\\DialogFrame\\UI-DialogBox-Background", edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border", tile=true, tileSize=32, edgeSize=32, insets={left=8,right=8,top=8,bottom=8}})
+    local title = f:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    title:SetPoint("TOPLEFT", 20, -20); title:SetText(L.REPORT_TITLE)
+    local hint = f:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    hint:SetPoint("TOPLEFT", 20, -48); hint:SetWidth(545); hint:SetJustifyH("LEFT"); hint:SetText(L.REPORT_COPY)
+    local close = CreateFrame("Button", nil, f, "UIPanelCloseButton")
+    close:SetPoint("TOPRIGHT", -5, -5); close:SetScript("OnClick", function() f:Hide() end)
+    local scroll = CreateFrame("ScrollFrame", nil, f, "UIPanelScrollFrameTemplate")
+    scroll:SetPoint("TOPLEFT", 20, -100); scroll:SetPoint("BOTTOMRIGHT", -40, 20)
+    local edit = CreateFrame("EditBox", nil, scroll)
+    edit:SetSize(520, 350); edit:SetMultiLine(true); edit:SetAutoFocus(false)
+    edit:SetFontObject("ChatFontNormal"); edit:SetMaxLetters(0)
+    edit:SetScript("OnEscapePressed", function() f:Hide() end)
+    scroll:SetScrollChild(edit)
+    f:SetScript("OnHide", function() edit:ClearFocus() end)
+    f.edit, f.scroll = edit, scroll
+    reportFrame = f
+    UISpecialFrames = UISpecialFrames or {}
+    table.insert(UISpecialFrames, "PetAssistDebugReport")
+  end
+  local report = BuildDebugReport(buttonName)
+  local _, lineCount = report:gsub("\n", "")
+  reportFrame.edit:SetHeight(math.max(350, (lineCount + 1) * 28))
+  reportFrame.edit:SetText(report)
+  reportFrame.scroll:SetVerticalScroll(0)
+  reportFrame:Show()
+  reportFrame.edit:SetFocus(); reportFrame.edit:HighlightText()
+end
+
 local function SyncPetCommand()
   local db = DB()
   local text = PET
@@ -1001,10 +1182,22 @@ local function WrapButton(realBtn)
   if not realBtn or wrapped[realBtn] or InCombatLockdown() then
     return
   end
-  header:WrapScript(realBtn, "OnClick", ONCLICK_PET, [[
-    self:SetAttribute("pa_reentry", nil)
-  ]])
+  local name = realBtn:GetName()
+  if not name then return end
+  local delegate = actionDelegates[realBtn]
+  if not delegate then
+    delegate = CreateFrame("Button", "PetAssistAction_" .. name, UIParent, "SecureActionButtonTemplate")
+    delegate:RegisterForClicks("AnyUp", "AnyDown")
+    delegate:SetAttribute("type", "action")
+    delegate:SetAttribute("*type*", "action")
+    delegate:Hide()
+    actionDelegates[realBtn] = delegate
+    ObserveButton(delegate, true)
+  end
+  header:SetFrameRef("pa_action_" .. name, delegate)
+  header:WrapScript(realBtn, "OnClick", ONCLICK_PET)
   wrapped[realBtn] = true
+  ObserveButton(realBtn, false)
 end
 
 local function UnwrapButtons()
@@ -1012,9 +1205,8 @@ local function UnwrapButtons()
     return
   end
   for btn in pairs(wrapped) do
-    pcall(function()
-      header:UnwrapScript(btn, "OnClick")
-    end)
+    local ok, err = pcall(function() header:UnwrapScript(btn, "OnClick") end)
+    if not ok then Print(string.format(L.UNWRAP_FAILED, btn:GetName() or "button", tostring(err))) end
     pcall(function()
       btn:SetAttribute("pa_native", nil)
       btn:SetAttribute("pa_reentry", nil)
@@ -1122,6 +1314,7 @@ local function Apply()
 end
 
 local function Refresh(quiet)
+  DebugRecord("refresh", "combat=" .. tostring(InCombatLockdown()) .. " enabled=" .. tostring(DB().enabled))
   -- Cancel any pending debounced refresh
   if refreshDebounceTimer then
     refreshDebounceTimer:Cancel()
@@ -1182,6 +1375,7 @@ local function RefreshOptionsUI()
   if not optionsFrame then return end
   local f, db = optionsFrame, DB()
   f.enableCheck:SetChecked(db.enabled)
+  if f.debugCheck then f.debugCheck:SetChecked(db.debug) end
   f.softCcCheck:SetChecked(db.softCC ~= false)
   f.restoreStanceCheck:SetChecked(db.restoreStance ~= false)
   f.howlCheck:SetChecked(db.softCCHowl)
@@ -1269,7 +1463,7 @@ local function CreateOptions()
     return content
   end
   local general = Page("general", 650)
-  local advanced = Page("advanced", 570)
+  local advanced = Page("advanced", 690)
   local rules = Page("rules", 650)
   local function CancelCapture()
     if f.recallCapture then
@@ -1373,6 +1567,13 @@ local function CreateOptions()
     {"recall", L.UI_RECALL_ACTION}, {"ignore", L.UI_IGNORE},
   }, function() return DB().macroPolicy end, function(value) DB().macroPolicy = value; Changed() end)
   Text(advanced, L.UI_MACRO_HINT, 446)
+  Text(advanced, L.UI_DEBUG, 502, true)
+  f.debugCheck = Check(advanced, L.UI_DEBUG_ENABLE, 526, function(self)
+    SetDebugEnabled(self:GetChecked() and true or false); RefreshOptionsUI()
+  end)
+  Text(advanced, L.UI_DEBUG_HINT, 562)
+  Button(advanced, L.UI_REPORT, 4, 628, 270, function() OpenDebugReport() end)
+  Button(advanced, L.UI_DEBUG_CLEAR, 284, 628, 200, ClearDebugLog)
 
   Text(rules, L.UI_RULES_HINT, 8)
   Text(rules, L.UI_NAME, 66, true)
@@ -1521,8 +1722,25 @@ eventFrame:RegisterEvent("UPDATE_BINDINGS")
 eventFrame:RegisterEvent("UPDATE_MACROS")
 eventFrame:RegisterEvent("CVAR_UPDATE")
 eventFrame:RegisterEvent("UNIT_PET")
+for _, event in ipairs({"PLAYER_REGEN_DISABLED", "UI_ERROR_MESSAGE", "ADDON_ACTION_BLOCKED", "ADDON_ACTION_FORBIDDEN",
+  "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_SUCCEEDED", "UNIT_SPELLCAST_FAILED", "UNIT_SPELLCAST_INTERRUPTED"}) do
+  eventFrame:RegisterEvent(event)
+end
 
-eventFrame:SetScript("OnEvent", function(_, event, arg1)
+eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
+  if event == "UI_ERROR_MESSAGE" then
+    DebugRecord("game-error", "id=" .. Identifier(arg1)) -- never record free-form error text
+    return
+  elseif event == "ADDON_ACTION_BLOCKED" or event == "ADDON_ACTION_FORBIDDEN" then
+    DebugRecord(event, "addon=" .. Identifier(arg1) .. " function=" .. Identifier(arg2))
+    return
+  elseif event:find("^UNIT_SPELLCAST_") then
+    if arg1 == "player" then DebugRecord(event, "spell=" .. Identifier(arg3)) end -- skip cast GUID
+    return
+  elseif event == "PLAYER_REGEN_DISABLED" then
+    DebugRecord("combat", "enter"); return
+  end
+  if event == "PLAYER_REGEN_ENABLED" then DebugRecord("combat", "leave") end
   if event == "ADDON_LOADED" then
     if arg1 == ADDON_NAME then
       -- Detect class
@@ -1530,6 +1748,8 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1)
       isHunterOrWarlock = (class == "HUNTER" or class == "WARLOCK")
       
       DB()
+      Diagnostics()
+      DebugRecord("session", "version=" .. VERSION .. " locale=" .. locale)
       RebuildBlockedNames()
       RegisterOptionsPanel()
     end
@@ -1614,8 +1834,17 @@ SlashCmdList.PETASSIST = function(msg)
   cmd = cmd and cmd:lower() or ""
   rest = rest or ""
 
-  if cmd == "" or cmd == "help" or cmd == "помощь" then
+  if cmd == "debug" or cmd == "отладка" then
+    if rest == "on" then SetDebugEnabled(true)
+    elseif rest == "off" then SetDebugEnabled(false)
+    elseif rest == "clear" then ClearDebugLog()
+    else Print(L.DEBUG_USAGE) end
+    RefreshOptionsUI()
+  elseif cmd == "report" or cmd == "отчёт" or cmd == "отчет" then
+    OpenDebugReport(rest ~= "" and rest or nil)
+  elseif cmd == "" or cmd == "help" or cmd == "помощь" then
     Print(L.SLASH_HELP)
+    Print(L.DEBUG_USAGE)
     Print(string.format(L.SLASH_MODE_STATUS, 
       ModeLabel(db.mode),
       (db.softCC ~= false and "on" or "off"),

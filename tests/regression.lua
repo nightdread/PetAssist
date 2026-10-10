@@ -26,11 +26,15 @@ function Frame:GetEffectiveAttribute(name, button)
 end
 function Frame:SetFrameRef(name, value) self.refs[name] = value end
 function Frame:GetFrameRef(name) return self.refs[name] end
-local allowed = { GetAttribute=true, SetAttribute=true, GetEffectiveAttribute=true, GetID=true, GetName=true }
+local allowed = { GetAttribute=true, SetAttribute=true, GetEffectiveAttribute=true, GetID=true, GetName=true, GetFrameRef=true }
 local function restricted(frame)
   return setmetatable({}, {__index=function(_, method)
     assert(allowed[method], "method unavailable in restricted environment: " .. method)
-    return function(_, ...) return frame[method](frame, ...) end
+    return function(_, ...)
+      local value=frame[method](frame, ...)
+      if method=="GetFrameRef" and value then return restricted(value) end
+      return value
+    end
   end})
 end
 function Frame:WrapScript(btn, script, pre, post)
@@ -68,14 +72,24 @@ function Frame:Click(button, down, mouse)
       local text = self:GetEffectiveAttribute("macrotext", button)
       local prefix, target, mouseButton, phase = text:match("^(.-)\n/click (%S+) (%S+) (%d)$")
       petCommands[#petCommands + 1] = prefix or text
-      if target then _G[target]:Click(mouseButton, phase == "1") end
+      -- Re-entering the currently executing macro button is not a reliable
+      -- native action dispatch path. Model rejection instead of allowing it.
+      if target and target ~= self:GetName() then _G[target]:Click(mouseButton, phase == "1") end
     end
   end
   if message and self.post then self.post(restricted(self), restricted(self.control), message, button, down) end
+  if self.scripts.PostClick then self.scripts.PostClick(self, button, down) end
   secure = previous
 end
 function Frame:SetScript(name, fn) self.scripts[name] = fn end
 function Frame:GetScript(name) return self.scripts[name] end
+function Frame:HookScript(name, hook)
+  local original=self.scripts[name]
+  self.scripts[name]=function(self, ...)
+    if original then original(self, ...) end
+    hook(self, ...)
+  end
+end
 function Frame:CreateFontString() return setmetatable({ attrs={}, scripts={}, refs={} }, Frame) end
 function Frame:SetChecked(value) self.checked = value end
 function Frame:GetChecked() return self.checked end
@@ -96,7 +110,7 @@ function Frame:SetVerticalScroll(value) self.scrollOffset = value end
 function Frame:GetStringHeight() return 28 end
 function Frame:Show() self.shown = true; if self.scripts.OnShow then self.scripts.OnShow(self) end end
 for _, method in ipairs({"RegisterForClicks", "RegisterForDrag", "RegisterEvent", "SetPoint", "SetSize",
-  "SetWidth", "SetHeight", "SetJustifyH", "SetPropagateKeyboardInput", "ClearAllPoints",
+  "SetWidth", "SetHeight", "SetJustifyH", "SetBackdrop", "SetMultiLine", "SetFontObject", "SetMaxLetters", "SetFocus", "HighlightText", "SetPropagateKeyboardInput", "ClearAllPoints",
   "SetFrameStrata", "SetAutoFocus", "ClearFocus"}) do Frame[method] = function() end end
 function CreateFrame(kind, name, parent, template)
   local f = setmetatable({name=name, parent=parent, attrs={}, refs={}, scripts={}}, Frame)
@@ -110,6 +124,10 @@ DEFAULT_CHAT_FRAME = { AddMessage = function(_, value) messages[#messages + 1] =
 SlashCmdList = {}
 BOOKTYPE_SPELL = "spell"
 ATTACK = "Attack"
+function GetBuildInfo() return "1.15.9", "123456", "Oct 10 2026", 11509 end
+function GetServerTime() return 1791660000 end
+function IsAddOnLoaded(name) return name=="Bartender4" end
+function GetAddOnMetadata() return "test-version" end
 function GetLocale() return TEST_LOCALE or "enUS" end
 function UnitClass() return "Player", TEST_CLASS or "WARLOCK" end
 function InCombatLockdown() return combat end
@@ -167,7 +185,7 @@ actions[1], actions[2], actions[13], actions[25] = {"spell",5782}, {"spell",172}
 assert(loadstring(ADDON_SOURCE))("PetAssist")
 local eventFrame
 for _, frame in ipairs(frames) do if frame.scripts.OnEvent then eventFrame = frame end end
-local function event(name, arg) eventFrame.scripts.OnEvent(eventFrame, name, arg) end
+local function event(name, ...) eventFrame.scripts.OnEvent(eventFrame, name, ...) end
 local function flush()
   local current = timers; timers = {}
   for _, timer in ipairs(current) do if not timer.cancelled then timer.fn() end end
@@ -191,6 +209,30 @@ check("Fear recalls once and executes original action", function()
   assert(#petCommands == 1 and petCommands[1] == "/petpassive\n/petfollow")
   assert(#executed == 1 and executed[1] == 1)
   assert(bindings["1"][1] == "ActionButton1")
+end)
+check("assisted slots use a distinct native action delegate", function()
+  click("2")
+  local delegate=PetAssistHeader:GetFrameRef("pa_action_ActionButton2")
+  assert(delegate and delegate~=ActionButton2 and delegate:GetAttribute("type")=="action")
+  assert(delegate:GetAttribute("action")==2)
+  assert(ActionButton2:GetAttribute("*macrotext-PetAssist"):find(delegate:GetName(),1,true))
+  assert(not ActionButton2:GetAttribute("*macrotext-PetAssist"):find("/click ActionButton2 ",1,true))
+  assert(#executed==1 and #petCommands==1)
+end)
+check("missing action delegate leaves native skill execution intact", function()
+  local name="pa_action_ActionButton2"
+  local delegate=PetAssistHeader:GetFrameRef(name)
+  PetAssistHeader:SetFrameRef(name,nil)
+  click("2"); assert(#executed==1 and #petCommands==0)
+  PetAssistHeader:SetFrameRef(name,delegate)
+end)
+check("delegate carries modified native targeting attributes", function()
+  ActionButton2:SetAttribute("unit1","focus")
+  ActionButton2:SetAttribute("checkselfcast",true)
+  click("2")
+  local delegate=PetAssistHeader:GetFrameRef("pa_action_ActionButton2")
+  assert(delegate:GetAttribute("*unit*")=="focus" and delegate:GetAttribute("checkselfcast"))
+  ActionButton2:SetAttribute("unit1",nil); ActionButton2:SetAttribute("checkselfcast",nil)
 end)
 check("native mouse-up preserves cast and pet command with key-down enabled", function()
   wipe(petCommands); wipe(executed)
@@ -395,6 +437,47 @@ check("disabling in combat is deferred then restores native bindings", function(
   combat=true; command("off"); assert(bindings["1"])
   combat=false; event("PLAYER_REGEN_ENABLED")
   assert(not bindings["1"] and not ActionButton1.wrapper and not extra.wrapper)
+  wipe(executed); wipe(petCommands)
+  ActionButton2:Click("LeftButton",true,true); ActionButton2:Click("LeftButton",false,true)
+  assert(#executed==1 and #petCommands==0)
+  assert(ActionButton2:GetAttribute("*type-PetAssist")==nil)
   command("on"); assert(bindings["1"] and ActionButton1.wrapper)
+end)
+check("diagnostics are opt-in and preserve mouse/key dispatch in combat", function()
+  assert(PetAssistDB.debug==false and #PetAssistDebugDB.entries==0)
+  actions[2]={"spell",172}; command("refresh"); click("2")
+  assert(#PetAssistDebugDB.entries==0)
+  command("debug on")
+  combat=true; click("2")
+  assert(#executed==1 and #petCommands==1)
+  local log=table.concat(PetAssistDebugDB.entries,"\n")
+  assert(log:find("bar-click",1,true) and log:find("delegate-click",1,true))
+  combat=false
+end)
+check("reports include build, settings, cast failures and blocked actions, without private text", function()
+  macros[1]={"PRIVATE_MACRO_NAME","/cast PRIVATE_MACRO_BODY"}; actions[1]={"macro",1}
+  PetAssistDB.rules.PRIVATE_RULE_NAME="ignore"
+  event("UI_ERROR_MESSAGE",50,"PRIVATE_ERROR_MESSAGE")
+  event("ADDON_ACTION_BLOCKED","PetAssist","UseAction()")
+  event("UNIT_SPELLCAST_FAILED","player","PRIVATE_CAST_GUID",172)
+  command("report ActionButton1")
+  local report=PetAssistDebugReport.edit:GetText()
+  assert(report:find("format=1",1,true) and report:find("1.15.9",1,true))
+  assert(report:find("Bartender4 loaded=true",1,true) and report:find("game-error id=50",1,true))
+  assert(report:find("ADDON_ACTION_BLOCKED",1,true) and report:find("UNIT_SPELLCAST_FAILED spell=172",1,true))
+  assert(not report:find("PRIVATE_",1,true))
+  PetAssistDB.rules.PRIVATE_RULE_NAME=nil
+end)
+check("diagnostic log is bounded and clear/off work without altering protected state", function()
+  for i=1,150 do event("UI_ERROR_MESSAGE",i,"private") end
+  assert(#PetAssistDebugDB.entries==100)
+  combat=true; command("debug off"); click("2")
+  local count=#PetAssistDebugDB.entries
+  event("UI_ERROR_MESSAGE",200,"private"); assert(#PetAssistDebugDB.entries==count)
+  assert(#executed==1 and #petCommands==1)
+  command("debug clear"); assert(#PetAssistDebugDB.entries==0)
+  command("report MissingButton")
+  assert(PetAssistDebugReport.edit:GetText():find("unknown button=MissingButton",1,true))
+  combat=false
 end)
 print("Passed " .. passed .. " regression scenarios (" .. _VERSION .. ")")

@@ -100,6 +100,17 @@ Conditional macros (`[mod:shift]`, `[@mouseover]`, `;`), `/castsequence`, `/use`
 
 `/pa macros attack|recall|ignore` applies that default policy to macros without their own rule. A macro containing an explicit `/pet...` command always owns pet behavior: PetAssist leaves it alone, even when an attack/recall rule is set. Native macro execution and spell ranks are preserved. PetAssist's automatic target remains `@target`; it does not infer a conditional macro's selected target.
 
+## Reporting problems
+
+1. Turn on recording: `/pa debug on` (or **Advanced → Troubleshooting**).
+2. Reproduce the problem with the addon enabled; note the ability and whether you used the mouse or a key.
+3. Open `/pa report` or `/pa report ActionButton2` for the affected button. The report text is selected for copying. Copy it and paste it into a GitHub issue or send it with your reproduction steps.
+4. Stop recording with `/pa debug off`. `/pa debug clear` erases the recorded events.
+
+Reports include addon/client versions, locale, class, settings, detected bar addons, occupied action slots and the most recent 100 recorded events. Recording is off by default; its state and bounded journal survive `/reload`. Nothing is sent automatically. Character names, chat, macro bodies/names and custom rule names are omitted.
+
+Clicks are dispatch attempts; player spell start/success/failure events are recorded separately. Game error IDs and blocked/forbidden addon actions are included while recording. Lua error text is not intercepted: enable `/console scriptErrors 1` and attach the game's Lua error separately if one appears. Reports and debug toggles are available in combat without modifying protected action attributes.
+
 ## Recall
 
 Bind a key (options UI or `/pa recall KEY`) to pull the pet back: Passive + Follow. Useful before CC or when the pet over-aggros. PetAssist reports the underlying binding it will override. Clearing Recall restores that binding after refresh (after combat if necessary).
@@ -109,6 +120,7 @@ Bind a key (options UI or `/pa recall KEY`) to pull the pet back: Passive + Foll
 - Default Blizzard bars (keybinds + mouse)
 - **Dominos**, **Bartender4**, **ElvUI** action buttons (secure OnClick; action-slot buttons)
 - Spell/macro edits refresh automatically out of combat; `/pa refresh` can also rebuild rules
+- Assisted actions use a separate secure action-slot delegate; they do not click back into the active macro button. Native slot execution is modeled in tests; real-client macro chaining and third-party bar handlers still require validation.
 - Changing pages in combat reads the current secure action slot from the button; slot policies are prepared out of combat
 - Option changes during combat take effect after combat
 - Spellbook UI casts are not hooked — use the action bar
@@ -146,8 +158,8 @@ Classic Era (`## Interface: 11509`). Warlock / Hunter pets.
 Releases upload automatically when you push a version tag:
 
 ```bash
-git tag v1.6.1
-git push origin v1.6.1
+git tag v1.6.2
+git push origin v1.6.2
 ```
 
 Requires GitHub secret `CF_API_KEY` and `## X-Curse-Project-ID` in the `.toc`.
@@ -161,3 +173,10 @@ python3 tests/run.py
 ```
 
 The suite loads the full addon in Lua 5.1 with mocked WoW APIs, checks action dispatch, macro preservation, pet policies, paging, settings, key phases, and class/locale initialization. Restricted snippets receive only allowed frame methods. It does **not** emulate Blizzard taint propagation or validate `/click` macro execution in a real client. Run the [in-game checklist](tests/IN_GAME.md) before releasing.
+
+Validate the installed file or packaged archive before delivering a build (with Lupa installed):
+
+```sh
+python tests/run.py --addon-source /path/to/Interface/AddOns/PetAssist/PetAssist.lua
+python tests/run.py --archive /path/to/PetAssist.zip
+```

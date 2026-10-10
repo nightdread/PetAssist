@@ -22,5 +22,33 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Package and upload
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test runtime
+        run: python -m pip install lupa==2.8
+
+      - name: Package without uploading
         uses: BigWigsMods/packager@v2
+        with:
+          args: -d
+
+      - name: Validate packaged addon
+        shell: bash
+        run: |
+          shopt -s nullglob
+          archives=(.release/*.zip)
+          if (( ${#archives[@]} == 0 )); then
+            echo "No release archive was produced"
+            exit 1
+          fi
+          for archive in "${archives[@]}"; do
+            python tests/run.py --archive "$archive"
+          done
+
+      - name: Upload validated package contents
+        uses: BigWigsMods/packager@v2
+        with:
+          args: -c -o
