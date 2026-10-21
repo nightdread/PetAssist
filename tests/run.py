@@ -8,15 +8,25 @@ root = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser(description="Validate the actual addon source or packaged release with Lua 5.1.")
 inputs = parser.add_mutually_exclusive_group()
 inputs.add_argument("--addon-source", type=Path, help="Validate an installed PetAssist.lua instead of the working copy")
-inputs.add_argument("--archive", type=Path, help="Validate PetAssist/PetAssist.lua inside a ZIP")
+inputs.add_argument("--archive", type=Path, help="Validate PetAssist package inside a ZIP")
 args = parser.parse_args()
 if args.archive:
     with ZipFile(args.archive) as archive:
         assert archive.testzip() is None, "Corrupt package"
         addon_source = archive.read("PetAssist/PetAssist.lua").decode("utf-8")
-        assert "PetAssist.lua" in archive.read("PetAssist/PetAssist.toc").decode("utf-8")
+        era_toc = archive.read("PetAssist/PetAssist.toc").decode("utf-8")
+        forever_toc = archive.read("PetAssist/PetAssist_Forever.toc").decode("utf-8")
+        compat_source = archive.read("PetAssist/Forever/Compat.lua").decode("utf-8")
+        assert "PetAssist.lua" in era_toc and "11509" in era_toc
+        assert "Forever/Compat.lua" in forever_toc and "16001" in forever_toc
+        assert "PetAssist.lua" in forever_toc
 else:
     addon_source = (args.addon_source or root / "PetAssist.lua").read_text()
+    compat_source = (root / "Forever" / "Compat.lua").read_text()
+    assert "11509" in (root / "PetAssist.toc").read_text()
+    forever_toc = (root / "PetAssist_Forever.toc").read_text()
+    assert "16001" in forever_toc and "Forever/Compat.lua" in forever_toc
+
 lua = LuaRuntime(unpack_returned_tuples=True)
 lua.globals().ADDON_SOURCE = addon_source
 suite = (root / "tests" / "regression.lua").read_text()
@@ -74,3 +84,22 @@ for stored in [
         else assert(#PetAssistDebugDB.entries == 0) end
     """)
 print("Passed 2 diagnostic persistence/repair checks")
+
+# Forever load path: Compat preload + Mainline-style spell API
+forever = LuaRuntime(unpack_returned_tuples=True)
+forever.globals().ADDON_SOURCE = addon_source
+forever.globals().PRELOAD_SOURCE = compat_source
+forever.globals().CLIENT_INTERFACE = 16001
+forever.globals().FOREVER_ONLY = True
+forever.execute(suite)
+print("Passed Forever load-path checks")
+
+# Forever secure-snippet failure fallback
+snippet_fail = LuaRuntime(unpack_returned_tuples=True)
+snippet_fail.globals().ADDON_SOURCE = addon_source
+snippet_fail.globals().PRELOAD_SOURCE = compat_source
+snippet_fail.globals().CLIENT_INTERFACE = 16001
+snippet_fail.globals().FOREVER_ONLY = True
+snippet_fail.globals().FORCE_SNIPPET_FAIL = True
+snippet_fail.execute(suite)
+print("Passed Forever snippet-failure fallback checks")

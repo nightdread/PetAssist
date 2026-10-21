@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.7.0
+
+### Forever (experimental)
+- Ship one CurseForge package for Classic Era and Forever: `PetAssist.toc` (`11509`) and `PetAssist_Forever.toc` (`16001`).
+- Add `Forever/Compat.lua`: client detect, `C_Spell` name lookup, Assist stance (`/petassist`), and a secure-snippet probe.
+- If OnClick wrapping is unavailable on a Forever build, disable bar SoftCC/assist wrapping, keep the Recall key, and print a clear message.
+- SoftCC, rules, and Recall remain the primary Forever value; `/petattack` assist stays available (e.g. Passive stance).
+
+### Validation
+- Automated suite: Era regressions plus Forever load path (Compat + `C_Spell`) and snippet-failure fallback (80 Lua 5.1 checks total with locale/class init).
+- Forever in-game smoke is **not** claimed yet; treat Forever as experimental until the Forever checklist in `tests/IN_GAME.md` passes.
+
 ## 1.6.2
 
 ### Fixes

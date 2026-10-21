@@ -1,16 +1,26 @@
 # PetAssist
 
-Classic Era addon for Warlocks and Hunters: your pet attacks the same target as soon as you press an ability on the action bars — no waiting for the mob to hit you first (Defensive stance).
+Warlock / Hunter pet helper for **Classic Era** and **WoW Forever** (experimental): SoftCC recall on Fear/Banish-style CC, optional `/petattack` with your cast, rules and Recall key. One CurseForge package; each client loads its own TOC.
 
 ## Why
 
-In Classic, a pet on **Defensive** only joins after you (or the pet) take damage. Ranged openers leave the pet idle. Blizzard blocks `PetAttack()` from normal addon code, so PetAssist uses secure action-bar keybinds and OnClick wrappers instead. The wrapper issues the pet command, then uses `/click` to execute the original button. Spells and user macro bodies are never reconstructed or truncated.
+In Classic Era, a pet on **Defensive** only joins after you (or the pet) take damage. Ranged openers leave the pet idle. Blizzard blocks `PetAttack()` from normal addon code, so PetAssist uses secure action-bar keybinds and OnClick wrappers instead. The wrapper issues the pet command, then uses `/click` to execute the original button. Spells and user macro bodies are never reconstructed or truncated.
+
+On Forever, Defensive often auto-engages more like Assist; SoftCC and Recall remain the main value. Explicit assist and `/petattack` still help on Passive or when you want bar-driven send.
 
 ## Install
+
+**Classic Era**
 
 1. Copy the `PetAssist` folder into `World of Warcraft/_classic_era_/Interface/AddOns/`
 2. Restart the game or `/reload`
 3. Enable **PetAssist** on the character addon list if needed
+
+**Forever** (experimental)
+
+1. Copy the same `PetAssist` folder into `World of Warcraft/_forever_/Interface/AddOns/` or `_classic_beta_/Interface/AddOns/` (whichever your client uses)
+2. Restart the game or `/reload`
+3. Confirm the addon list shows Interface `16001` / Forever TOC (`PetAssist_Forever.toc`)
 
 ## Usage
 
@@ -44,7 +54,7 @@ When enabled (default **on**), normal assist spells automatically restore pet st
 /cast …
 ```
 
-Choose Defensive (default) or Passive in options, or use `/pa stance defensive|passive`. This sets your preferred stance before assisting; it does not remember the previous stance. Mouse clicks and modifier keybinds use the same behavior. Friendly, dead or absent targets do not change stance.
+Choose Defensive (default) or Passive in options, or use `/pa stance defensive|passive`. On Forever, **Assist** is also available (`/pa stance assist` → `/petassist`). This sets your preferred stance before assisting; it does not remember the previous stance. Mouse clicks and modifier keybinds use the same behavior. Friendly, dead or absent targets do not change stance.
 
 Toggle: options checkbox or `/pa stance on|off`.
 
@@ -151,15 +161,20 @@ Existing strings support all Classic Era client languages. New 1.6 controls and 
 
 ## Support
 
-Classic Era (`## Interface: 11509`). Warlock / Hunter pets.
+| Client | TOC | Interface | Status |
+|--------|-----|-----------|--------|
+| Classic Era | `PetAssist.toc` | `11509` | Supported (see changelog confirmations) |
+| Forever | `PetAssist_Forever.toc` | `16001` | Experimental until in-game smoke passes |
+
+Warlock / Hunter pets. Forever shares Mainline-family APIs; if secure OnClick snippets fail on a build, bar SoftCC/assist wrapping disables and a chat message explains it — the Recall key still works.
 
 ## Releasing (CurseForge)
 
-Releases upload automatically when you push a version tag:
+One zip is tagged for Classic and Forever flavors (packager maps `11509` → classic, `16001` → forever). Releases upload when you push a version tag:
 
 ```bash
-git tag v1.6.2
-git push origin v1.6.2
+git tag v1.7.0
+git push origin v1.7.0
 ```
 
 Requires GitHub secret `CF_API_KEY` and `## X-Curse-Project-ID` in the `.toc`.

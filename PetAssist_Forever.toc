@@ -1,0 +1,15 @@
+## Interface: 16001
+## Title: PetAssist
+## Notes: SoftCC recall + optional pet assist (Warlock/Hunter). Forever experimental until in-game smoke passes.
+## Notes-ruRU: SoftCC-отзыв + опциональный assist (Чернокнижник/Охотник). Forever — experimental до проверки в клиенте.
+## Author: Artem
+## Version: @project-version@
+## IconTexture: Interface\AddOns\PetAssist\icon
+## SavedVariablesPerCharacter: PetAssistDB, PetAssistDebugDB
+## DefaultState: enabled
+## X-Category: Combat
+## X-Curse-Project-ID: 1719459
+## X-Game: Forever
+
+Forever/Compat.lua
+PetAssist.lua

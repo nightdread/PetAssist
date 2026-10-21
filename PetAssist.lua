@@ -1,17 +1,21 @@
 --[[
-  PetAssist 1.6.2 — Classic Era
+  PetAssist 1.7.0 — Classic Era + Forever (experimental)
 
   Secure OnClick selects a pet command and delegates the current action slot
   to a separate SecureActionButton. Never /click the active macro button.
   Slot policies are prepared out of combat; slots are selected at click time.
+
+  Forever loads Forever/Compat.lua first (PetAssistCompat). Classic Era does not.
 ]]
 
 local ADDON_NAME = ...
 local VERSION = "@project-version@"
 -- Unpackaged working copy (placeholder not replaced by packager)
 if VERSION:find("@", 1, true) then
-  VERSION = "1.6.2"
+  VERSION = "1.7.0"
 end
+
+local Compat = PetAssistCompat -- optional; set by Forever/Compat.lua before this file loads
 
 local MODE_ALL = "all"
 local MODE_HARM = "harm"
@@ -73,7 +77,9 @@ local TRANSLATIONS = {
     SLASH_HELP = "Commands: on|off|refresh|test [ButtonName]|status|config|mode|softcc|stance|macros|howl|frost|rule|rules|block|unblock|recall",
     OPTION_USAGE = "Usage: /pa %s on|off",
     MACRO_USAGE = "Usage: /pa macros auto|attack|recall|ignore",
-    STANCE_USAGE = "Usage: /pa stance on|off|passive|defensive",
+    STANCE_USAGE = "Usage: /pa stance on|off|passive|defensive|assist",
+    SECURE_SNIPPETS_UNAVAILABLE = "Secure action-bar wrapping is unavailable on this client. SoftCC on cast is disabled; Recall key still works. Report the client build if this persists.",
+    UI_ASSIST = "Assist",
     ENABLED = "Enabled",
     REFRESH_AFTER_COMBAT = "refresh after combat…",
     SOFTCC_GUARD = "SoftCC Guard — recall pet on Fear/Banish (passive+follow)",
@@ -152,7 +158,9 @@ local TRANSLATIONS = {
     SLASH_HELP = "Команды: on|off|refresh|test [ИмяКнопки]|status|config|mode|softcc|stance|macros|howl|frost|rule|rules|block|unblock|recall",
     OPTION_USAGE = "Использование: /pa %s on|off",
     MACRO_USAGE = "Использование: /pa macros auto|attack|recall|ignore",
-    STANCE_USAGE = "Использование: /pa stance on|off|passive|defensive",
+    STANCE_USAGE = "Использование: /pa stance on|off|passive|defensive|assist",
+    SECURE_SNIPPETS_UNAVAILABLE = "Обёртка панелей недоступна на этом клиенте. SoftCC при касте отключён; клавиша Recall работает. Сообщите билд клиента, если это повторяется.",
+    UI_ASSIST = "Помощь (Assist)",
     ENABLED = "Включён",
     REFRESH_AFTER_COMBAT = "обновление после боя…",
     SOFTCC_GUARD = "SoftCC Guard — на Fear/Banish отзывать пета (passive+follow)",
@@ -502,8 +510,8 @@ local UI_TRANSLATIONS = {
     UI_ALL = "All supported abilities and items", UI_ALL_HINT = "Also attack when using buffs, stones and other utility actions.",
     UI_CUSTOM = "All supported actions except your exclusions", UI_CUSTOM_HINT = "Manage your excluded names in the Rules tab.",
     UI_STANCE = "Pet stance", UI_RESTORE = "Set this stance before sending the pet to attack",
-    UI_DEFENSIVE = "Defensive", UI_PASSIVE = "Passive",
-    UI_STANCE_HINT = "After a recall, the next attack uses this stance if the option is enabled.",
+    UI_DEFENSIVE = "Defensive", UI_PASSIVE = "Passive", UI_ASSIST = "Assist",
+    UI_STANCE_HINT = "After a recall, the next attack uses this stance if the option is enabled. On Forever, Assist matches the Assist pet stance.",
     UI_RECALL = "Recall shortcut", UI_RECALL_HINT = "Stop attacking and return to you. Escape cancels key assignment.",
     UI_BIND = "Assign key", UI_UNBIND = "Remove key", UI_BINDING = "Current key: %s",
     UI_SAFETY = "Protect crowd control", UI_SOFTCC = "Recall on Fear, Banish and Freezing Trap",
@@ -536,8 +544,8 @@ local UI_TRANSLATIONS = {
     UI_ALL = "Все поддерживаемые способности и предметы", UI_ALL_HINT = "Атаковать также при усилениях, использовании камней и других служебных действиях.",
     UI_CUSTOM = "Все поддерживаемые действия, кроме исключений", UI_CUSTOM_HINT = "Список исключений можно изменить на вкладке «Правила».",
     UI_STANCE = "Стойка питомца", UI_RESTORE = "Устанавливать эту стойку перед отправкой в атаку",
-    UI_DEFENSIVE = "Защитная", UI_PASSIVE = "Пассивная",
-    UI_STANCE_HINT = "После отзыва следующая атака включает выбранную стойку, если эта настройка включена.",
+    UI_DEFENSIVE = "Защитная", UI_PASSIVE = "Пассивная", UI_ASSIST = "Помощь (Assist)",
+    UI_STANCE_HINT = "После отзыва следующая атака включает выбранную стойку, если эта настройка включена. В Forever Assist соответствует стойке Assist.",
     UI_RECALL = "Клавиша отзыва", UI_RECALL_HINT = "Прекратить атаку и вернуться к вам. Escape отменяет назначение клавиши.",
     UI_BIND = "Назначить клавишу", UI_UNBIND = "Убрать клавишу", UI_BINDING = "Текущая клавиша: %s",
     UI_SAFETY = "Защита эффектов контроля", UI_SOFTCC = "Отзывать при Страхе, Изгнании и Замораживающей ловушке",
@@ -798,7 +806,11 @@ local function DB()
     PetAssistDB.schemaVersion = 1
   end
   if type(PetAssistDB.rules) ~= "table" then PetAssistDB.rules = {} end
-  if PetAssistDB.stance ~= "passive" and PetAssistDB.stance ~= "defensive" then
+  local stanceOk = PetAssistDB.stance == "passive" or PetAssistDB.stance == "defensive"
+  if Compat and Compat.IsValidStance then
+    stanceOk = Compat.IsValidStance(PetAssistDB.stance)
+  end
+  if not stanceOk then
     PetAssistDB.stance = "defensive"
   end
   if PetAssistDB.macroPolicy ~= "auto" and PetAssistDB.macroPolicy ~= "attack"
@@ -813,6 +825,9 @@ local function SpellName(spellId)
   if not spellId then
     return nil
   end
+  if Compat and Compat.SpellName then
+    return Compat.SpellName(spellId)
+  end
   if GetSpellInfo then
     return GetSpellInfo(spellId)
   end
@@ -821,6 +836,26 @@ local function SpellName(spellId)
   end
   return nil
 end
+
+local function StanceCommand(stance)
+  if Compat and Compat.StanceCommand then
+    return Compat.StanceCommand(stance)
+  end
+  return stance == "passive" and "/petpassive" or "/petdefensive"
+end
+
+local function SupportsAssistStance()
+  return Compat and Compat.SupportsAssistStance and Compat.SupportsAssistStance()
+end
+
+local function SecureSnippetsOk()
+  if not Compat or not Compat.SecureSnippetsAvailable then
+    return true
+  end
+  return Compat.SecureSnippetsAvailable()
+end
+
+local hasShownSnippetWarning = false
 
 local function RebuildBlockedNames()
   wipe(blockedNames)
@@ -1077,6 +1112,9 @@ local function BuildDebugReport(buttonName)
   local lines = {
     "PetAssist report format=1 version=" .. VERSION,
     "client=" .. Identifier(buildVersion) .. " build=" .. Identifier(build) .. " interface=" .. tostring(interface),
+    "compat=" .. (Compat and "forever" or "era")
+      .. " snippets=" .. tostring(SecureSnippetsOk())
+      .. (Compat and Compat.secureSnippetError and (" err=" .. Identifier(Compat.secureSnippetError)) or ""),
     "locale=" .. locale .. " class=" .. Identifier(class),
     "enabled=" .. tostring(db.enabled) .. " secure-enabled=" .. tostring(header:GetAttribute("pa_enabled")),
     "debug=" .. tostring(db.debug) .. " combat=" .. tostring(InCombatLockdown()) .. " pending=" .. tostring(pendingRefresh),
@@ -1162,8 +1200,7 @@ local function SyncPetCommand()
   local db = DB()
   local text = PET
   if db.restoreStance then
-    local stanceCommand = db.stance == "passive" and "/petpassive" or "/petdefensive"
-    text = stanceCommand .. " [pet,@target,harm,nodead]\n" .. PET
+    text = StanceCommand(db.stance) .. " [pet,@target,harm,nodead]\n" .. PET
   end
   header:SetAttribute("pa_assist_text", text)
   header:SetAttribute("pa_recall_text", SOFTCC)
@@ -1195,7 +1232,16 @@ local function WrapButton(realBtn)
     ObserveButton(delegate, true)
   end
   header:SetFrameRef("pa_action_" .. name, delegate)
-  header:WrapScript(realBtn, "OnClick", ONCLICK_PET)
+  local ok, err = pcall(function()
+    header:WrapScript(realBtn, "OnClick", ONCLICK_PET)
+  end)
+  if not ok then
+    if Compat and Compat.MarkSnippetsUnavailable then
+      Compat.MarkSnippetsUnavailable(err)
+    end
+    Print(string.format(L.UNWRAP_FAILED, name, tostring(err)))
+    return
+  end
   wrapped[realBtn] = true
   ObserveButton(realBtn, false)
 end
@@ -1275,13 +1321,26 @@ local function Apply()
   ClearOverrideBindings(binder)
   local db = DB()
   SyncKeyDownAttr()
-  header:SetAttribute("pa_enabled", db.enabled and true or false)
 
   if not db.enabled then
+    header:SetAttribute("pa_enabled", false)
     UnwrapButtons()
     return true, 0, 0, 0
   end
 
+  -- Forever beta builds have reported broken secure snippets; keep Recall usable.
+  if not SecureSnippetsOk() then
+    header:SetAttribute("pa_enabled", false)
+    UnwrapButtons()
+    ApplyRecallBinding()
+    if not hasShownSnippetWarning then
+      Print(L.SECURE_SNIPPETS_UNAVAILABLE)
+      hasShownSnippetWarning = true
+    end
+    return true, 0, 0, 0
+  end
+
+  header:SetAttribute("pa_enabled", true)
   SyncPetCommand()
   PrepareSlotPolicies()
   local buttonCount, keyCount, extraCount = 0, 0, 0
@@ -1305,6 +1364,18 @@ local function Apply()
         end
       end
     end
+  end
+
+  -- If WrapScript failed during the pass, disable bar wrapping; Recall still works.
+  if Compat and Compat.secureSnippetError then
+    UnwrapButtons()
+    header:SetAttribute("pa_enabled", false)
+    ApplyRecallBinding()
+    if not hasShownSnippetWarning then
+      Print(L.SECURE_SNIPPETS_UNAVAILABLE)
+      hasShownSnippetWarning = true
+    end
+    return true, 0, 0, 0
   end
 
   extraCount = ScanExtraButtons()
@@ -1494,9 +1565,14 @@ local function CreateOptions()
   f.restoreStanceCheck = Check(general, L.UI_RESTORE, 290, function(self)
     DB().restoreStance = self:GetChecked() and true or false; Changed()
   end)
-  f.stanceChoices = Choices(general, 328, {
+  local stanceChoices = {
     {"defensive", L.UI_DEFENSIVE}, {"passive", L.UI_PASSIVE},
-  }, function() return DB().stance end, function(value) DB().stance = value; Changed() end)
+  }
+  if SupportsAssistStance() then
+    stanceChoices[#stanceChoices + 1] = {"assist", L.UI_ASSIST}
+  end
+  f.stanceChoices = Choices(general, 328, stanceChoices,
+    function() return DB().stance end, function(value) DB().stance = value; Changed() end)
   Text(general, L.UI_STANCE_HINT, 406)
   Text(general, L.UI_RECALL, 462, true)
   Text(general, L.UI_RECALL_HINT, 486)
@@ -1883,7 +1959,7 @@ SlashCmdList.PETASSIST = function(msg)
       db.restoreStance = true
     elseif m == "off" or m == "выкл" or m == "0" then
       db.restoreStance = false
-    elseif m == "passive" or m == "defensive" then
+    elseif m == "passive" or m == "defensive" or (m == "assist" and SupportsAssistStance()) then
       db.stance = m
       db.restoreStance = true
     elseif m == "" then

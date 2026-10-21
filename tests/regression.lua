@@ -39,6 +39,7 @@ local function restricted(frame)
 end
 function Frame:WrapScript(btn, script, pre, post)
   assert(not combat)
+  if FORCE_SNIPPET_FAIL then error("loadstring_untainted missing") end
   assert(not btn.wrapper, "double wrapping")
   btn.wrapper = assert(loadstring("local self, control, button, down = ...\n" .. pre))
   btn.control = self
@@ -124,7 +125,13 @@ DEFAULT_CHAT_FRAME = { AddMessage = function(_, value) messages[#messages + 1] =
 SlashCmdList = {}
 BOOKTYPE_SPELL = "spell"
 ATTACK = "Attack"
-function GetBuildInfo() return "1.15.9", "123456", "Oct 10 2026", 11509 end
+function GetBuildInfo()
+  local interface = CLIENT_INTERFACE or 11509
+  if interface >= 16000 then
+    return "1.60.1", "70338", "Oct 12 2026", interface
+  end
+  return "1.15.9", "123456", "Oct 10 2026", interface
+end
 function GetServerTime() return 1791660000 end
 function IsAddOnLoaded(name) return name=="Bartender4" end
 function GetAddOnMetadata() return "test-version" end
@@ -132,9 +139,21 @@ function GetLocale() return TEST_LOCALE or "enUS" end
 function UnitClass() return "Player", TEST_CLASS or "WARLOCK" end
 function InCombatLockdown() return combat end
 function GetCVarBool() return keyDown end
-function GetSpellInfo(id)
+local function SpellNameFromId(id)
   if spellNames[id] then return spellNames[id] end
   for _, name in pairs(spellNames) do if name == id then return name end end
+end
+if CLIENT_INTERFACE and CLIENT_INTERFACE >= 16000 then
+  GetSpellInfo = nil
+  C_Spell = {
+    GetSpellName = SpellNameFromId,
+    GetSpellInfo = function(id)
+      local name = SpellNameFromId(id)
+      if name then return { name = name } end
+    end,
+  }
+else
+  function GetSpellInfo(id) return SpellNameFromId(id) end
 end
 function GetActionInfo(slot)
   local action = actions[slot]
@@ -182,6 +201,7 @@ local extra = CreateFrame("Button", "BT4Button1")
 extra:SetAttribute("type", "action")
 extra:SetAttribute("action", 25)
 actions[1], actions[2], actions[13], actions[25] = {"spell",5782}, {"spell",172}, {"spell",1454}, {"spell",172}
+if PRELOAD_SOURCE then assert(loadstring(PRELOAD_SOURCE))() end
 assert(loadstring(ADDON_SOURCE))("PetAssist")
 local eventFrame
 for _, frame in ipairs(frames) do if frame.scripts.OnEvent then eventFrame = frame end end
@@ -200,6 +220,46 @@ end
 local passed = 0
 local function check(name, fn)
   fn(); passed = passed + 1; print("ok " .. passed .. " - " .. name)
+end
+if FOREVER_ONLY then
+  event("ADDON_LOADED", "PetAssist")
+  event("PLAYER_ENTERING_WORLD")
+  flush()
+  check("Forever compat loads and detects forever client", function()
+    assert(PetAssistCompat and PetAssistCompat.isForever)
+    assert(PetAssistCompat.DetectForever())
+    assert(PetAssistCompat.SupportsAssistStance())
+  end)
+  if FORCE_SNIPPET_FAIL then
+    check("snippet failure keeps Recall path and disables wraps", function()
+      assert(not bindings["1"])
+      local joined = table.concat(messages, "\n")
+      assert(joined:find("Secure action-bar wrapping is unavailable", 1, true)
+        or joined:find("Обёртка панелей недоступна", 1, true))
+      assert(PetAssistHeader:GetAttribute("pa_enabled") == false)
+    end)
+  else
+    check("Forever SoftCC Fear still recalls", function()
+      click("1")
+      assert(#petCommands == 1 and petCommands[1] == "/petpassive\n/petfollow")
+      assert(#executed == 1 and executed[1] == 1)
+    end)
+    check("Forever assist stance prefixes petattack", function()
+      command("stance assist")
+      click("2")
+      assert(#petCommands == 1)
+      assert(petCommands[1]:find("/petassist", 1, true))
+      assert(petCommands[1]:find("/petattack", 1, true))
+      assert(#executed == 1 and executed[1] == 2)
+    end)
+    check("Forever C_Spell names resolve SoftCC ids", function()
+      assert(not GetSpellInfo)
+      assert(C_Spell.GetSpellName(5782) == "Fear")
+      assert(PetAssistCompat.SpellName(5782) == "Fear")
+    end)
+  end
+  print("Passed " .. passed .. " Forever scenarios (" .. _VERSION .. ")")
+  return
 end
 event("ADDON_LOADED", "PetAssist")
 event("PLAYER_ENTERING_WORLD")
