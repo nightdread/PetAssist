@@ -6,5 +6,6 @@
 .idea/
 .vscode/
 PetAssist-release/
+.release/
 lua-5.1.5/
 *.tar.gz

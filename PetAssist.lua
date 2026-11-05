@@ -511,6 +511,9 @@ local UI_TRANSLATIONS = {
     UI_ALL = "All supported abilities and items", UI_ALL_HINT = "Also attack when using buffs, stones and other utility actions.",
     UI_CUSTOM = "All supported actions except your exclusions", UI_CUSTOM_HINT = "Manage your excluded names in the Rules tab.",
     UI_STANCE = "Pet stance", UI_RESTORE = "Set this stance before sending the pet to attack",
+    UI_KEEP_TARGET = "Avoid sending attack commands while the pet has a living target",
+    UI_KEEP_TARGET_HINT = "This limits PetAssist commands; pet stance and other commands can still change its target. Applies after combat.",
+    KEEP_TARGET_USAGE = "Usage: /pa keeptarget on|off", KEEP_TARGET_STATUS = "Keep pet target: %s (changes apply after combat)",
     UI_DEFENSIVE = "Defensive", UI_PASSIVE = "Passive", UI_ASSIST = "Assist",
     UI_STANCE_HINT = "After a recall, the next attack uses this stance if the option is enabled. On Forever, Assist matches the Assist pet stance.",
     UI_RECALL = "Recall shortcut", UI_RECALL_HINT = "Stop attacking and return to you. Escape cancels key assignment.",
@@ -546,6 +549,9 @@ local UI_TRANSLATIONS = {
     UI_ALL = "Все поддерживаемые способности и предметы", UI_ALL_HINT = "Атаковать также при усилениях, использовании камней и других служебных действиях.",
     UI_CUSTOM = "Все поддерживаемые действия, кроме исключений", UI_CUSTOM_HINT = "Список исключений можно изменить на вкладке «Правила».",
     UI_STANCE = "Стойка питомца", UI_RESTORE = "Устанавливать эту стойку перед отправкой в атаку",
+    UI_KEEP_TARGET = "Не отправлять команду атаки, пока у питомца есть живая цель",
+    UI_KEEP_TARGET_HINT = "Ограничивает команды PetAssist; стойка питомца и другие команды могут менять цель. Применяется после боя.",
+    KEEP_TARGET_USAGE = "Использование: /pa keeptarget on|off", KEEP_TARGET_STATUS = "Сохранение цели питомца: %s (изменения после боя)",
     UI_DEFENSIVE = "Защитная", UI_PASSIVE = "Пассивная", UI_ASSIST = "Помощь (Assist)",
     UI_STANCE_HINT = "После отзыва следующая атака включает выбранную стойку, если эта настройка включена. В Forever Assist соответствует стойке Assist.",
     UI_RECALL = "Клавиша отзыва", UI_RECALL_HINT = "Прекратить атаку и вернуться к вам. Escape отменяет назначение клавиши.",
@@ -577,6 +583,7 @@ local defaults = {
   mode = MODE_HARM,       -- all | harm | custom
   softCC = true,          -- on Fear/Banish/… pull pet back (passive+follow)
   restoreStance = true,   -- restore pet stance (e.g. /petdefensive) before /petattack on normal spells
+  keepTarget = false,      -- avoid new attack orders while pettarget is alive
   stance = "defensive",
   macroPolicy = "auto",   -- auto (simple casts only) | attack | recall | ignore
   rules = {},             -- localized spell or macro name -> attack | recall | ignore
@@ -706,6 +713,7 @@ local binder = CreateFrame("Frame", "PetAssistBinder", UIParent, "SecureHandlerB
 local header = CreateFrame("Frame", "PetAssistHeader", UIParent, "SecureHandlerBaseTemplate")
 
 local PET = "/petattack [pet,@target,harm,nodead]"
+local PET_KEEP_TARGET = "/petattack [@pettarget,noexists][@pettarget,dead] target"
 local SOFTCC = "/petpassive\n/petfollow"
 
 local recallBtn = CreateFrame("Button", "PetAssistRecall", UIParent, "SecureActionButtonTemplate")
@@ -1121,7 +1129,7 @@ local function BuildDebugReport(buttonName)
     "enabled=" .. tostring(db.enabled) .. " secure-enabled=" .. tostring(header:GetAttribute("pa_enabled")),
     "debug=" .. tostring(db.debug) .. " combat=" .. tostring(InCombatLockdown()) .. " pending=" .. tostring(pendingRefresh),
     "mode=" .. db.mode .. " softCC=" .. tostring(db.softCC) .. " howl=" .. tostring(db.softCCHowl) .. " frost=" .. tostring(db.softCCFrostTrap),
-    "restoreStance=" .. tostring(db.restoreStance) .. " stance=" .. db.stance .. " macros=" .. db.macroPolicy,
+    "restoreStance=" .. tostring(db.restoreStance) .. " stance=" .. db.stance .. " macros=" .. db.macroPolicy .. " keepTarget=" .. tostring(db.keepTarget == true),
     "keydown=" .. tostring(UseKeyDown()) .. " recallBound=" .. tostring(db.recallKey ~= nil),
     "rules=" .. CountEntries(db.rules) .. " exclusions=" .. CountEntries(db.blacklist) .. " wrapped=" .. CountEntries(wrapped),
     "petExists=" .. tostring(UnitExists and UnitExists("pet") or false),
@@ -1200,9 +1208,10 @@ end
 
 local function SyncPetCommand()
   local db = DB()
-  local text = PET
+  local petCommand = db.keepTarget == true and PET_KEEP_TARGET or PET
+  local text = petCommand
   if db.restoreStance then
-    text = StanceCommand(db.stance) .. " [pet,@target,harm,nodead]\n" .. PET
+    text = StanceCommand(db.stance) .. " [pet,@target,harm,nodead]\n" .. petCommand
   end
   header:SetAttribute("pa_assist_text", text)
   header:SetAttribute("pa_recall_text", SOFTCC)
@@ -1451,6 +1460,7 @@ local function RefreshOptionsUI()
   if f.debugCheck then f.debugCheck:SetChecked(db.debug) end
   f.softCcCheck:SetChecked(db.softCC ~= false)
   f.restoreStanceCheck:SetChecked(db.restoreStance ~= false)
+  f.keepTargetCheck:SetChecked(db.keepTarget == true)
   f.howlCheck:SetChecked(db.softCCHowl)
   f.frostCheck:SetChecked(db.softCCFrostTrap)
   for _, group in ipairs(f.choiceGroups) do
@@ -1535,7 +1545,7 @@ local function CreateOptions()
     pages[key] = scroll
     return content
   end
-  local general = Page("general", 650)
+  local general = Page("general", 790)
   local advanced = Page("advanced", 790)
   local rules = Page("rules", 650)
   local function CancelCapture()
@@ -1627,6 +1637,11 @@ local function CreateOptions()
     CancelCapture()
     DB().recallKey = nil; Changed()
   end)
+
+  f.keepTargetCheck = Check(general, L.UI_KEEP_TARGET, 614, function(self)
+    DB().keepTarget = self:GetChecked() and true or false; Changed()
+  end)
+  Text(general, L.UI_KEEP_TARGET_HINT, 654)
 
   Text(advanced, L.UI_SAFETY, 8, true)
   Text(advanced, L.UI_SAFETY_HINT, 34)
@@ -1973,6 +1988,13 @@ SlashCmdList.PETASSIST = function(msg)
     end
     Refresh(false)
     Print(string.format(L.STANCE_TOGGLE, db.restoreStance and db.stance or "off"))
+  elseif cmd == "keeptarget" then
+    local value = rest:lower()
+    if value ~= "on" and value ~= "off" then Print(L.KEEP_TARGET_USAGE); return end
+    db.keepTarget = value == "on"
+    Refresh(true)
+    Print(string.format(L.KEEP_TARGET_STATUS, value))
+    RefreshOptionsUI()
   elseif cmd == "macros" then
     local policy = rest:lower()
     if policy ~= "auto" and RULE_ACTIONS[policy] == nil then Print(L.MACRO_USAGE); return end

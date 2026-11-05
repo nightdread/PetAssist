@@ -1,7 +1,7 @@
 --[[
   PetAssist Forever compatibility layer.
 
-  Loaded only from PetAssist_Forever.toc (before PetAssist.lua).
+  Loaded only from PetAssist_Camelot.toc (before PetAssist.lua).
   Forever uses Mainline-family APIs (Interface 16001); Classic Era does not load this file.
 ]]
 

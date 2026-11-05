@@ -15,16 +15,17 @@ if args.archive:
         assert archive.testzip() is None, "Corrupt package"
         addon_source = archive.read("PetAssist/PetAssist.lua").decode("utf-8")
         era_toc = archive.read("PetAssist/PetAssist.toc").decode("utf-8")
-        forever_toc = archive.read("PetAssist/PetAssist_Forever.toc").decode("utf-8")
+        forever_toc = archive.read("PetAssist/PetAssist_Camelot.toc").decode("utf-8")
         compat_source = archive.read("PetAssist/Forever/Compat.lua").decode("utf-8")
-        assert "PetAssist.lua" in era_toc and "11509" in era_toc
+        expected_interface = "16001" if args.archive.name.endswith("-forever.zip") else "11509"
+        assert "PetAssist.lua" in era_toc and expected_interface in era_toc
         assert "Forever/Compat.lua" in forever_toc and "16001" in forever_toc
         assert "PetAssist.lua" in forever_toc
 else:
     addon_source = (args.addon_source or root / "PetAssist.lua").read_text()
     compat_source = (root / "Forever" / "Compat.lua").read_text()
     assert "11509" in (root / "PetAssist.toc").read_text()
-    forever_toc = (root / "PetAssist_Forever.toc").read_text()
+    forever_toc = (root / "PetAssist_Camelot.toc").read_text()
     assert "16001" in forever_toc and "Forever/Compat.lua" in forever_toc
 
 lua = LuaRuntime(unpack_returned_tuples=True)
@@ -68,6 +69,26 @@ for saved_state in [
         else assert(not bindings["1"] and PetAssistDB.stance == "passive") end
     """)
 print("Passed 3 saved-settings migration checks")
+
+# Simulate a fresh addon load with previously saved settings, independently
+# of the main regression runtime.
+for keep_target in [True, False]:
+    runtime = LuaRuntime(unpack_returned_tuples=True)
+    runtime.globals().ADDON_SOURCE = addon_source
+    runtime.globals().TEST_KEEP_TARGET = keep_target
+    runtime.execute(fixture + """
+        PetAssistDB = {keepTarget = TEST_KEEP_TARGET}
+        event("ADDON_LOADED", "PetAssist")
+        event("PLAYER_ENTERING_WORLD")
+        flush()
+        assert(PetAssistDB.keepTarget == TEST_KEEP_TARGET)
+        assert(PetAssistOptionsPanel.keepTargetCheck:GetChecked() == TEST_KEEP_TARGET)
+        click("2")
+        local macro = TEST_KEEP_TARGET and "/petattack [@pettarget,noexists][@pettarget,dead] target"
+            or "/petattack [pet,@target,harm,nodead]"
+        assert(petCommands[1]:find(macro, 1, true) and #executed == 1)
+    """)
+print("Passed 2 saved keep-target setting checks")
 
 for stored in [
     "PetAssistDB={debug=true}; PetAssistDebugDB={entries={'previous-session-marker'}}",

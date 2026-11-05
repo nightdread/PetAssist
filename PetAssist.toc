@@ -1,4 +1,4 @@
-## Interface: 11509
+## Interface: 11509, 16001
 ## Title: PetAssist
 ## Notes: Pet attacks on cast; SoftCC pulls pet on Fear/Banish (Warlock/Hunter).
 ## Notes-deDE: Begleiter greift beim Zaubern an; SoftCC ruft Begleiter bei Furcht/Verbannung zurück (Hexenmeister/Jäger).

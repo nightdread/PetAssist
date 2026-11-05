@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.8.0
+
+- Add an experimental, opt-in keep-target setting: suppress PetAssist attack orders while the pet has a living target. Other commands and pet stance can still change the target; in-game validation is required.
+- Explain that PetAssist reacts to the input and cannot guarantee a successful cast before issuing a pet order.
+- Build separate Classic and Forever archives with the correct game versions and filenames; use the Camelot TOC for Forever.
+- Automated Lua regression and package checks pass; keep-target and Forever behavior still require in-game validation.
+
 ## 1.7.1
 
 ### Clarity and troubleshooting

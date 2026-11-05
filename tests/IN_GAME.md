@@ -4,7 +4,7 @@ The automated suite models native action execution. Basic Warlock damage casts a
 
 # Forever experimental smoke (required before calling Forever “supported”)
 
-Install into `_forever_` or `_classic_beta_`. Confirm `/dump select(4, GetBuildInfo())` is in the `16xxx` range and the addon loaded `PetAssist_Forever.toc`.
+Install into `_forever_` or `_classic_beta_`. Confirm `/dump select(4, GetBuildInfo())` is in the `16xxx` range and the addon loaded `PetAssist_Camelot.toc`.
 
 1. SoftCC Fear/Banish (or Forever equivalents): pet Passive + Follow; spell still casts.
 2. Damage ability keybind + mouse click: pet assist if Defensive does not already auto-send; no blocked-action spam.
@@ -29,5 +29,7 @@ Enable Lua errors (`/console scriptErrors 1`). Start with Blizzard bars and a Hu
 11. **Persistence/classes/locales:** `/reload` preserves preferences and rules. Mage/other classes remain inactive. Check English/Russian settings; verify other locales fall back for new strings without Lua errors.
 
 12. **Diagnostics:** With recording off, use abilities and verify the journal stays empty. Enable `/pa debug on`, reproduce a failed and a successful cast, and inspect `/pa report ActionButton2`; game error IDs and player cast outcomes must appear. Verify mouse/key casts with debug both on and off in combat, report copy/select/scroll/Escape behavior, and English/Russian Advanced settings. Reload and verify the bounded log survives. Debug off stops new entries; clear erases them. Confirm no character names or macro text appear. Attach Lua errors separately.
+
+13. **Keep pet target — experimental, not yet verified in game:** On both supported classes, enable `/pa keeptarget on` out of combat. With the pet attacking living enemy A, change your target to enemy B and cast an eligible spell; confirm the player spell executes normally and PetAssist does not redirect the pet. Repeat while the pet is travelling to A, and record whether the client exposes `pettarget` immediately. Kill A, target B and cast again: confirm the pet attacks B when its old target is dead or absent. Repeat with a friendly, dead and absent player target; no attack or stance change should occur solely because of an invalid target. Use the native pet attack button or an explicit pet macro to redirect the pet manually. Cast Fear/Banish or a supported trap and confirm recall still works; then cast an eligible attack and verify stance restoration and a new attack order. Repeat with stance restoration off and with each available stance (Passive, Defensive, and Assist where supported); note any autonomous target changes caused by the stance. Change the option during combat and verify it takes effect after combat, then check persistence after `/reload`. Repeat in Forever before describing it as verified there. The Lua fixture checks generated commands, not actual game macro condition evaluation or pet AI.
 
 Do not publish a release until the secure execution and original macro/cast checks pass on the target Classic Era client.

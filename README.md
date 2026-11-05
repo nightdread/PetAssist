@@ -1,6 +1,6 @@
 # PetAssist
 
-Warlock / Hunter pet helper for **Classic Era** and **WoW Forever** (experimental): SoftCC recall on Fear/Banish-style CC, optional `/petattack` with your cast, rules and Recall key. One CurseForge package; each client loads its own TOC.
+Warlock / Hunter pet helper for **Classic Era** and **WoW Forever** (experimental): SoftCC recall on Fear/Banish-style CC, optional `/petattack` with your cast, rules and Recall key. Separate CurseForge packages identify each client flavor.
 
 ## Why
 
@@ -20,7 +20,7 @@ On Forever, Defensive often auto-engages more like Assist; SoftCC and Recall rem
 
 1. Copy the same `PetAssist` folder into `World of Warcraft/_forever_/Interface/AddOns/` or `_classic_beta_/Interface/AddOns/` (whichever your client uses)
 2. Restart the game or `/reload`
-3. Confirm the addon list shows Interface `16001` / Forever TOC (`PetAssist_Forever.toc`)
+3. Confirm the addon list shows Interface `16001` / Forever TOC (`PetAssist_Camelot.toc`)
 
 ## Usage
 
@@ -68,6 +68,7 @@ Toggle: options checkbox or `/pa stance on|off`.
 | `/pa config` | Esc → Options → AddOns → PetAssist |
 | `/pa softcc on\|off` | SoftCC Guard (recall pet on Fear/Banish) |
 | `/pa stance on\|off\|defensive\|passive` | Enable/disable preferred stance, or select it |
+| `/pa keeptarget on\|off` | Avoid sending attack orders while the pet has a living target |
 | `/pa howl on\|off` / `/pa frost on\|off` | Include Howl of Terror / Frost Trap in SoftCC |
 | `/pa macros auto\|attack\|recall\|ignore` | Default behavior for macros |
 | `/pa rule attack\|recall\|ignore\|clear Name` | Set/remove an explicit spell or macro rule |
@@ -109,6 +110,14 @@ Default **auto** recognizes one unconditional `/cast SpellName` (optional rank a
 Conditional macros (`[mod:shift]`, `[@mouseover]`, `;`), `/castsequence`, `/use`, and macros with additional commands are left alone. Add an explicit macro rule to opt in. The default macro policy is separate from `all|harm|custom`; `all` does not force ambiguous macros to assist.
 
 `/pa macros attack|recall|ignore` applies that default policy to macros without their own rule. A macro containing an explicit `/pet...` command always owns pet behavior: PetAssist leaves it alone, even when an attack/recall rule is set. Native macro execution and spell ranks are preserved. PetAssist's automatic target remains `@target`; it does not infer a conditional macro's selected target.
+
+### Keep the pet's target (experimental)
+
+Enable **General → Avoid sending attack commands while the pet has a living target** or `/pa keeptarget on` to avoid issuing a new PetAssist attack order when the pet already has a living target. The option is off by default. When the pet has no target, or its target is dead, the next eligible action can send it to your current target. To switch targets intentionally, use the game's pet attack button or your own pet macro. SoftCC recall still takes priority. Changes made in combat apply after combat.
+
+This limits only PetAssist's attack commands; pet stances, other addons, and manual commands may still affect the pet's target. If stance restoration is enabled, it still sets the selected stance for an eligible player target. The conditional macro needs validation in the real target client, especially when the pet's target dies or changes.
+
+PetAssist sends commands on the input action; it cannot guarantee the spell was successfully cast. An invalid or out-of-range cast can therefore still trigger an attack order.
 
 ### Why didn't my pet attack?
 
@@ -172,17 +181,17 @@ Existing strings support all Classic Era client languages. New 1.6 controls and 
 | Client | TOC | Interface | Status |
 |--------|-----|-----------|--------|
 | Classic Era | `PetAssist.toc` | `11509` | Supported (see changelog confirmations) |
-| Forever | `PetAssist_Forever.toc` | `16001` | Experimental until in-game smoke passes |
+| Forever | `PetAssist_Camelot.toc` | `16001` | Experimental until in-game smoke passes |
 
 Warlock / Hunter pets. Forever shares Mainline-family APIs; if secure OnClick snippets fail on a build, bar SoftCC/assist wrapping disables and a chat message explains it — the Recall key still works.
 
 ## Releasing (CurseForge)
 
-One zip is tagged for Classic and Forever flavors (packager maps `11509` → classic, `16001` → forever). Releases upload when you push a version tag:
+The release workflow creates and validates separate `-classic.zip` and `-forever.zip` archives (packager maps `11509` → classic, `16001` → forever), then uploads them sequentially. Releases upload when you push a version tag:
 
 ```bash
-git tag v1.7.0
-git push origin v1.7.0
+git tag v1.8.0
+git push origin v1.8.0
 ```
 
 Requires GitHub secret `CF_API_KEY` and `## X-Curse-Project-ID` in the `.toc`.
