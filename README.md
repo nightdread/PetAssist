@@ -89,7 +89,7 @@ Toggle: options checkbox or `/pa stance on|off`.
 
 ### Spell and macro rules
 
-Settings are grouped into **General** (attack mode, stance, Recall key), **Advanced** (crowd-control protection and macro behavior), and **Rules** (spell/macro overrides and custom exclusions). Pages scroll on smaller settings windows. Choices show the selected value; changes apply automatically, or after combat ends.
+Open **Esc → Options → AddOns → PetAssist** to manage the addon without chat commands. The settings are grouped into **General** (attack mode, stance, Recall key), **Advanced** (crowd-control protection and macro behavior), **Rules** (spell/macro overrides and custom exclusions), and **Diagnostics** (status, action-bar refresh, button checks and reports). Pages scroll on smaller settings windows. Choices show the selected value; changes apply automatically, or after combat ends. Chat commands remain available as shortcuts.
 
 In the Rules tab, enter a localized spell name / exact macro name, select a behavior and save. Click a saved rule to edit it; choose default behavior to remove it. Custom exclusions only apply in custom mode. You can also use chat commands:
 
@@ -129,10 +129,10 @@ PetAssist sends commands on the input action; it cannot guarantee the spell was 
 
 ## Reporting problems
 
-1. Turn on recording: `/pa debug on` (or **Advanced → Troubleshooting**).
+1. Open **Diagnostics** in PetAssist settings and enable diagnostic recording (or use `/pa debug on`).
 2. Reproduce the problem with the addon enabled; note the ability and whether you used the mouse or a key.
-3. Open `/pa report` or `/pa report ActionButton2` for the affected button. The report text is selected for copying. Copy it and paste it into a GitHub issue or send it with your reproduction steps.
-4. Stop recording with `/pa debug off`. `/pa debug clear` erases the recorded events.
+3. Enter the affected button name in **Diagnostics** and open the report (or use `/pa report ActionButton2`). The report text is selected for copying. Copy it and paste it into a GitHub issue or send it with your reproduction steps.
+4. Turn off recording in **Diagnostics** when finished. The clear-log button erases the recorded events; `/pa debug off` and `/pa debug clear` are also available.
 
 Reports include addon/client versions, locale, class, settings, detected bar addons, occupied action slots and the most recent 100 recorded events. Recording is off by default; its state and bounded journal survive `/reload`. Nothing is sent automatically. Character names, chat, macro bodies/names and custom rule names are omitted.
 
@@ -190,8 +190,8 @@ Warlock / Hunter pets. Forever shares Mainline-family APIs; if secure OnClick sn
 The release workflow creates and validates separate `-classic.zip` and `-forever.zip` archives (packager maps `11509` → classic, `16001` → forever), then uploads them sequentially. Releases upload when you push a version tag:
 
 ```bash
-git tag v1.8.0
-git push origin v1.8.0
+git tag v1.9.0
+git push origin v1.9.0
 ```
 
 Requires GitHub secret `CF_API_KEY` and `## X-Curse-Project-ID` in the `.toc`.

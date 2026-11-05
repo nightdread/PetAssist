@@ -504,13 +504,13 @@ local UI_TRANSLATIONS = {
     DEBUG_OFF = "Debug recording disabled; the existing log is kept.", DEBUG_CLEARED = "Diagnostic log cleared.",
     DEBUG_USAGE = "Usage: /pa debug on|off|clear. Copy a report: /pa report [ButtonName]",
     REPORT_TITLE = "PetAssist — diagnostic report", REPORT_COPY = "Click the text, select all (Ctrl+A / Cmd+A), copy and send it with the steps to reproduce.",
-    UI_ENABLED = "Enable PetAssist", UI_SUBTITLE = "Send your pet to attack when you use abilities.",
-    UI_GENERAL = "General", UI_ADVANCED = "Advanced", UI_RULES = "Rules",
-    UI_MODE = "When should your pet attack?", UI_HARM = "Offensive abilities (recommended)",
+    UI_ENABLED = "Enable PetAssist", UI_SUBTITLE = "Commands are sent on input, even if the cast fails.",
+    UI_GENERAL = "General", UI_ADVANCED = "Advanced", UI_RULES = "Rules", UI_DIAGNOSTICS = "Diagnostics",
+    UI_MODE = "When should your pet attack? Choose one.", UI_HARM = "Offensive abilities (recommended)",
     UI_HARM_HINT = "Attack with damage spells and curses; leave buffs and utility abilities alone.",
     UI_ALL = "All supported abilities and items", UI_ALL_HINT = "Also attack when using buffs, stones and other utility actions.",
     UI_CUSTOM = "All supported actions except your exclusions", UI_CUSTOM_HINT = "Manage your excluded names in the Rules tab.",
-    UI_STANCE = "Pet stance", UI_RESTORE = "Set this stance before sending the pet to attack",
+    UI_STANCE = "Pet stance — choose one", UI_RESTORE = "Set this stance before sending the pet to attack",
     UI_KEEP_TARGET = "Avoid sending attack commands while the pet has a living target",
     UI_KEEP_TARGET_HINT = "This limits PetAssist commands; pet stance and other commands can still change its target. Applies after combat.",
     KEEP_TARGET_USAGE = "Usage: /pa keeptarget on|off", KEEP_TARGET_STATUS = "Keep pet target: %s (changes apply after combat)",
@@ -520,7 +520,7 @@ local UI_TRANSLATIONS = {
     UI_BIND = "Assign key", UI_UNBIND = "Remove key", UI_BINDING = "Current key: %s",
     UI_SAFETY = "Protect crowd control", UI_SOFTCC = "Recall on Fear, Banish and Freezing Trap",
     UI_SAFETY_HINT = "Makes the pet passive and brings it back to avoid breaking these effects.",
-    UI_MACROS = "Macros without a custom rule", UI_AUTO = "Automatic (recommended)",
+    UI_MACROS = "Macros without a custom rule — choose one", UI_AUTO = "Automatic (recommended)",
     UI_AUTO_HINT = "Recognize simple spell macros. Leave complex macros unchanged.",
     UI_ATTACK = "Send pet to attack", UI_RECALL_ACTION = "Recall pet", UI_IGNORE = "Leave pet unchanged",
     UI_MACRO_HINT = "Macros with their own pet commands always keep control of the pet.",
@@ -531,6 +531,16 @@ local UI_TRANSLATIONS = {
     UI_ADD = "Exclude", UI_REMOVE = "Remove exclusion", UI_NO_EXCLUSIONS = "No excluded names.",
     UI_SAVED_NOTICE = "Saved: %s", UI_REMOVED_NOTICE = "Removed: %s", UI_ENTER_NAME = "Enter a spell or macro name first.",
     UI_AUTOSAVE = "Preferences save automatically; use Save rule for rules. Combat changes apply after combat.",
+    UI_STATUS_ACTIVE = "PetAssist is enabled in settings", UI_STATUS_OFF = "PetAssist is disabled in settings",
+    UI_STATUS_UNSUPPORTED = "Status: this class is not supported",
+    UI_STATUS_UNAVAILABLE = "Status: action-bar assistance is unavailable or still loading",
+    UI_STATUS_PENDING = "Changes are waiting for combat to end.", UI_STATUS_REFRESHING = "Action bars are being refreshed.", UI_STATUS_READY = "Settings applied.",
+    UI_REFRESH_BUTTON = "Refresh action bars", UI_REFRESH_HINT = "Rebuild PetAssist action-bar bindings. During combat, this waits until combat ends.",
+    UI_BUTTON_NAME = "Action button name (optional)", UI_BUTTON_HINT = "Enter an action button name, e.g. ActionButton1. Leave blank to inspect ActionButton1.",
+    UI_TEST_BUTTON = "Check button", UI_TEST_RESULT = "%s (slot %s, %s #%s)\nSelected: %s\nPrepared: %s\nReason: %s\nButton hooked: %s\n%s",
+    UI_YES = "yes", UI_NO = "no",
+    UI_TEST_PENDING = "Changes are pending until combat ends.", UI_TEST_APPLIED = "Current settings have been applied.",
+    UI_TEST_NO_ACTION = "PetAssist does not issue a pet command", UI_TEST_ATTACK = "Send pet to attack", UI_TEST_RECALL = "Recall pet",
   },
   ruRU = {
     UNWRAP_FAILED = "Не удалось восстановить %s: %s",
@@ -542,13 +552,13 @@ local UI_TRANSLATIONS = {
     DEBUG_OFF = "Отладка выключена; записанный журнал сохранён.", DEBUG_CLEARED = "Журнал отладки очищен.",
     DEBUG_USAGE = "Использование: /pa debug on|off|clear. Отчёт: /pa report [ИмяКнопки]",
     REPORT_TITLE = "PetAssist — отчёт об ошибке", REPORT_COPY = "Нажмите на текст, выделите всё (Ctrl+A / Cmd+A), скопируйте и отправьте вместе с шагами воспроизведения.",
-    UI_ENABLED = "Включить PetAssist", UI_SUBTITLE = "Питомец атакует вместе с вашими способностями.",
-    UI_GENERAL = "Основные", UI_ADVANCED = "Дополнительно", UI_RULES = "Правила",
-    UI_MODE = "Когда питомец должен атаковать?", UI_HARM = "Атакующие способности (рекомендуется)",
+    UI_ENABLED = "Включить PetAssist", UI_SUBTITLE = "Команда при нажатии, даже если способность не сработала.",
+    UI_GENERAL = "Основные", UI_ADVANCED = "Дополнительно", UI_RULES = "Правила", UI_DIAGNOSTICS = "Диагностика",
+    UI_MODE = "Когда питомец должен атаковать? Выберите один вариант.", UI_HARM = "Атакующие способности (рекомендуется)",
     UI_HARM_HINT = "Атаковать при заклинаниях урона и проклятиях; не реагировать на усиления и служебные способности.",
     UI_ALL = "Все поддерживаемые способности и предметы", UI_ALL_HINT = "Атаковать также при усилениях, использовании камней и других служебных действиях.",
     UI_CUSTOM = "Все поддерживаемые действия, кроме исключений", UI_CUSTOM_HINT = "Список исключений можно изменить на вкладке «Правила».",
-    UI_STANCE = "Стойка питомца", UI_RESTORE = "Устанавливать эту стойку перед отправкой в атаку",
+    UI_STANCE = "Стойка питомца — выберите одну", UI_RESTORE = "Устанавливать эту стойку перед отправкой в атаку",
     UI_KEEP_TARGET = "Не отправлять команду атаки, пока у питомца есть живая цель",
     UI_KEEP_TARGET_HINT = "Ограничивает команды PetAssist; стойка питомца и другие команды могут менять цель. Применяется после боя.",
     KEEP_TARGET_USAGE = "Использование: /pa keeptarget on|off", KEEP_TARGET_STATUS = "Сохранение цели питомца: %s (изменения после боя)",
@@ -558,7 +568,7 @@ local UI_TRANSLATIONS = {
     UI_BIND = "Назначить клавишу", UI_UNBIND = "Убрать клавишу", UI_BINDING = "Текущая клавиша: %s",
     UI_SAFETY = "Защита эффектов контроля", UI_SOFTCC = "Отзывать при Страхе, Изгнании и Замораживающей ловушке",
     UI_SAFETY_HINT = "Питомец переходит в пассивную стойку и возвращается, чтобы не сбить эти эффекты.",
-    UI_MACROS = "Макросы без отдельного правила", UI_AUTO = "Автоматически (рекомендуется)",
+    UI_MACROS = "Макросы без отдельного правила — выберите один вариант", UI_AUTO = "Автоматически (рекомендуется)",
     UI_AUTO_HINT = "Распознавать простые макросы заклинаний. Не менять поведение сложных макросов.",
     UI_ATTACK = "Отправить питомца в атаку", UI_RECALL_ACTION = "Отозвать питомца", UI_IGNORE = "Не менять поведение питомца",
     UI_MACRO_HINT = "Макросы со своими командами питомцу всегда сохраняют управление им.",
@@ -569,6 +579,16 @@ local UI_TRANSLATIONS = {
     UI_ADD = "Исключить", UI_REMOVE = "Убрать исключение", UI_NO_EXCLUSIONS = "Исключений пока нет.",
     UI_SAVED_NOTICE = "Сохранено: %s", UI_REMOVED_NOTICE = "Удалено: %s", UI_ENTER_NAME = "Сначала введите имя способности или макроса.",
     UI_AUTOSAVE = "Настройки сохраняются сразу; правила — кнопкой «Сохранить». Изменения в бою применятся после боя.",
+    UI_STATUS_ACTIVE = "PetAssist включён в настройках", UI_STATUS_OFF = "PetAssist выключен в настройках",
+    UI_STATUS_UNSUPPORTED = "Состояние: этот класс не поддерживается",
+    UI_STATUS_UNAVAILABLE = "Состояние: управление панелями недоступно или ещё загружается",
+    UI_STATUS_PENDING = "Изменения ожидают окончания боя.", UI_STATUS_REFRESHING = "Выполняется обновление панелей.", UI_STATUS_READY = "Настройки применены.",
+    UI_REFRESH_BUTTON = "Обновить панели", UI_REFRESH_HINT = "Заново настроить панели PetAssist. В бою обновление выполнится после боя.",
+    UI_BUTTON_NAME = "Имя кнопки на панели (необязательно)", UI_BUTTON_HINT = "Например, ActionButton1. Пустое поле проверяет ActionButton1.",
+    UI_TEST_BUTTON = "Проверить кнопку", UI_TEST_RESULT = "%s (ячейка %s, %s №%s)\nВыбрано: %s\nПодготовлено: %s\nПричина: %s\nКнопка подключена: %s\n%s",
+    UI_YES = "да", UI_NO = "нет",
+    UI_TEST_PENDING = "Изменения ожидают окончания боя.", UI_TEST_APPLIED = "Текущие настройки применены.",
+    UI_TEST_NO_ACTION = "PetAssist не отправляет команду питомцу", UI_TEST_ATTACK = "Отправить питомца в атаку", UI_TEST_RECALL = "Отозвать питомца",
   },
 }
 for language, values in pairs(UI_TRANSLATIONS) do
@@ -735,6 +755,7 @@ local isHunterOrWarlock = false
 local hasShownClassWarning = false
 local firstLogin = true
 local refreshDebounceTimer
+local RefreshOptionsUI
 
 -- Read the same effective action/page attributes used by native secure buttons.
 -- The native OnClick decides which physical phase fires (including mouse-up).
@@ -1437,6 +1458,7 @@ local function DebouncedRefresh()
   refreshDebounceTimer = C_Timer.NewTimer(0.1, function()
     refreshDebounceTimer = nil
     Refresh(true)
+    if RefreshOptionsUI then RefreshOptionsUI() end
   end)
 end
 
@@ -1453,9 +1475,47 @@ local function ModeLabel(mode)
   return L.MODE_HARM_DESC
 end
 
-local function RefreshOptionsUI()
+-- Shared by the graphical inspector and the existing slash command. This only
+-- reads prepared attributes; protected actions remain untouched during combat.
+local function InspectButton(buttonName)
+  buttonName = (buttonName or ""):match("^%s*(.-)%s*$")
+  if buttonName == "" then buttonName = "ActionButton1" end
+  local btn = _G[buttonName]
+  if not btn or type(btn.GetAttribute) ~= "function" then
+    local message = string.format(L.TEST_BAD_BUTTON, buttonName)
+    return nil, nil, message
+  end
+  local slot = SlotFromButton(btn)
+  local actionType, id
+  if slot then actionType, id = GetActionInfo(slot) end
+  local action, reason = ResolveAction(actionType, id)
+  local prepared = slot and header:GetAttribute("pa_slot_" .. slot) or PA_NONE
+  local name = actionType == "spell" and SpellName(id)
+  if actionType == "macro" then name = GetMacroInfo(id) end
+  local detail = string.format(L.TEST_DETAIL, buttonName, tostring(slot), tostring(actionType),
+    tostring(id), tostring(name), tostring(action), tostring(prepared), reason,
+    tostring(pendingRefresh), tostring(InCombatLockdown()))
+  local native = string.format(L.TEST_NATIVE, tostring(wrapped[btn] == true), tostring(DB().stance), tostring(DB().macroPolicy))
+  local function policyLabel(policy)
+    return policy == PA_ASSIST and L.UI_TEST_ATTACK or policy == PA_SOFTCC and L.UI_TEST_RECALL or L.UI_TEST_NO_ACTION
+  end
+  local suffix = pendingRefresh and L.UI_TEST_PENDING
+    or refreshDebounceTimer and L.UI_STATUS_REFRESHING
+    or not isHunterOrWarlock and L.UI_STATUS_UNSUPPORTED
+    or not DB().enabled and L.UI_STATUS_OFF
+    or not header:GetAttribute("pa_enabled") and L.UI_STATUS_UNAVAILABLE
+    or L.UI_TEST_APPLIED
+  return detail, native, string.format(L.UI_TEST_RESULT, buttonName, tostring(slot), tostring(actionType), tostring(id),
+    policyLabel(action), policyLabel(prepared), reason, wrapped[btn] and L.UI_YES or L.UI_NO, suffix)
+end
+
+RefreshOptionsUI = function()
   if not optionsFrame then return end
+  -- The panel can remain registered while hidden. Rebuild its dynamic rule
+  -- rows only when visible; OnShow performs a full refresh when it opens.
+  if optionsFrame.IsShown and not optionsFrame:IsShown() then return end
   local f, db = optionsFrame, DB()
+  if f.clearDiagnostic then f.clearDiagnostic() end
   f.enableCheck:SetChecked(db.enabled)
   if f.debugCheck then f.debugCheck:SetChecked(db.debug) end
   f.softCcCheck:SetChecked(db.softCC ~= false)
@@ -1469,6 +1529,17 @@ local function RefreshOptionsUI()
     end
   end
   f.recallText:SetText(string.format(L.UI_BINDING, db.recallKey or L.RECALL_UNBOUND))
+  if f.statusText then
+    local status = not isHunterOrWarlock and L.UI_STATUS_UNSUPPORTED
+      or db.enabled and L.UI_STATUS_ACTIVE or L.UI_STATUS_OFF
+    local state = pendingRefresh and L.UI_STATUS_PENDING
+      or refreshDebounceTimer and L.UI_STATUS_REFRESHING
+      or not isHunterOrWarlock and ""
+      or not db.enabled and ""
+      or db.enabled and not header:GetAttribute("pa_enabled") and L.UI_STATUS_UNAVAILABLE
+      or L.UI_STATUS_READY
+    f.statusText:SetText(status .. "\n" .. state)
+  end
   f.updateRuleList()
 end
 
@@ -1546,8 +1617,9 @@ local function CreateOptions()
     return content
   end
   local general = Page("general", 790)
-  local advanced = Page("advanced", 790)
+  local advanced = Page("advanced", 540)
   local rules = Page("rules", 650)
+  local diagnostics = Page("diagnostics", 790)
   local function CancelCapture()
     if f.recallCapture then
       f.recallCapture:Hide()
@@ -1563,9 +1635,10 @@ local function CreateOptions()
     end
     f.activeTab = key
   end
-  tabs.general = Button(f, L.UI_GENERAL, 16, 106, 158, function() SelectTab("general") end)
-  tabs.advanced = Button(f, L.UI_ADVANCED, 182, 106, 158, function() SelectTab("advanced") end)
-  tabs.rules = Button(f, L.UI_RULES, 348, 106, 158, function() SelectTab("rules") end)
+  tabs.general = Button(f, L.UI_GENERAL, 16, 106, 120, function() SelectTab("general") end)
+  tabs.advanced = Button(f, L.UI_ADVANCED, 142, 106, 120, function() SelectTab("advanced") end)
+  tabs.rules = Button(f, L.UI_RULES, 268, 106, 120, function() SelectTab("rules") end)
+  tabs.diagnostics = Button(f, L.UI_DIAGNOSTICS, 394, 106, 120, function() SelectTab("diagnostics") end)
   f.selectTab = SelectTab
   Text(general, L.UI_MODE, 8, true)
   f.modeChoices = Choices(general, 32, {
@@ -1660,14 +1733,52 @@ local function CreateOptions()
     {"recall", L.UI_RECALL_ACTION}, {"ignore", L.UI_IGNORE},
   }, function() return DB().macroPolicy end, function(value) DB().macroPolicy = value; Changed() end)
   Text(advanced, L.UI_MACRO_HINT, 446)
-  Text(advanced, L.UI_DEBUG, 502, true)
-  f.debugCheck = Check(advanced, L.UI_DEBUG_ENABLE, 526, function(self)
+  f.statusText = Text(diagnostics, "", 8, true)
+  f.refreshButton = Button(diagnostics, L.UI_REFRESH_BUTTON, 4, 62, 220, function()
+    Refresh(false); RefreshOptionsUI()
+  end)
+  Text(diagnostics, L.UI_REFRESH_HINT, 98)
+  Text(diagnostics, L.UI_BUTTON_NAME, 158, true)
+  Text(diagnostics, L.UI_BUTTON_HINT, 182)
+  local diagnosticName = CreateFrame("EditBox", nil, diagnostics, "InputBoxTemplate")
+  diagnosticName:SetSize(480, 26); diagnosticName:SetPoint("TOPLEFT", 8, -232)
+  diagnosticName:SetAutoFocus(false)
+  diagnosticName:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+  diagnosticName:SetScript("OnTextChanged", function() if f.clearDiagnostic then f.clearDiagnostic() end end)
+  f.diagnosticName = diagnosticName
+  f.diagnosticResult = Text(diagnostics, "", 306)
+  local layoutDiagnostics
+  f.testButton = Button(diagnostics, L.UI_TEST_BUTTON, 4, 268, 220, function()
+    local _, _, result = InspectButton(diagnosticName:GetText())
+    diagnosticName:ClearFocus(); f.diagnosticResult:SetText(result)
+    layoutDiagnostics()
+  end)
+  local debugTitle = Text(diagnostics, L.UI_DEBUG, 460, true)
+  f.debugCheck = Check(diagnostics, L.UI_DEBUG_ENABLE, 486, function(self)
     SetDebugEnabled(self:GetChecked() and true or false); RefreshOptionsUI()
   end)
-  Text(advanced, L.UI_DEBUG_HINT, 562)
-  Button(advanced, L.UI_REPORT, 4, 628, 270, function() OpenDebugReport() end)
-  Button(advanced, L.UI_DEBUG_CLEAR, 284, 628, 200, ClearDebugLog)
-  Text(advanced, L.UI_TEST_HINT, 670)
+  local debugHint = Text(diagnostics, L.UI_DEBUG_HINT, 526)
+  f.reportButton = Button(diagnostics, L.UI_REPORT, 4, 596, 250, function()
+    local name = diagnosticName:GetText():match("^%s*(.-)%s*$")
+    diagnosticName:ClearFocus(); OpenDebugReport(name ~= "" and name or nil)
+  end)
+  f.clearDebugButton = Button(diagnostics, L.UI_DEBUG_CLEAR, 264, 596, 220, ClearDebugLog)
+  layoutDiagnostics = function()
+    local top = math.max(460, 306 + f.diagnosticResult:GetStringHeight() + 24)
+    local function Move(element, x, y)
+      element:ClearAllPoints(); element:SetPoint("TOPLEFT", x, -y)
+    end
+    Move(debugTitle, 4, top)
+    Move(f.debugCheck, 0, top + 26)
+    Move(debugHint, 4, top + 66)
+    Move(f.reportButton, 4, top + 136)
+    Move(f.clearDebugButton, 264, top + 136)
+    diagnostics:SetHeight(top + 180)
+  end
+  f.clearDiagnostic = function()
+    f.diagnosticResult:SetText("")
+    layoutDiagnostics()
+  end
 
   Text(rules, L.UI_RULES_HINT, 8)
   Text(rules, L.UI_NAME, 66, true)
@@ -1749,7 +1860,7 @@ local function CreateOptions()
   footer:SetJustifyH("LEFT"); footer:SetText(L.UI_AUTOSAVE)
   f:SetScript("OnShow", RefreshOptionsUI)
   f:SetScript("OnHide", function()
-    CancelCapture(); ruleName:ClearFocus(); excludedName:ClearFocus()
+    CancelCapture(); ruleName:ClearFocus(); excludedName:ClearFocus(); diagnosticName:ClearFocus()
   end)
   optionsFrame = f
   SelectTab("general")
@@ -1832,7 +1943,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
     if arg1 == "player" then DebugRecord(event, "spell=" .. Identifier(arg3)) end -- skip cast GUID
     return
   elseif event == "PLAYER_REGEN_DISABLED" then
-    DebugRecord("combat", "enter"); return
+    DebugRecord("combat", "enter"); RefreshOptionsUI(); return
   end
   if event == "PLAYER_REGEN_ENABLED" then DebugRecord("combat", "leave") end
   if event == "ADDON_LOADED" then
@@ -1853,6 +1964,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
   if event == "CVAR_UPDATE" then
     if arg1 == "ActionButtonUseKeyDown" then
       if InCombatLockdown() then pendingRefresh = true else SyncKeyDownAttr() end
+      RefreshOptionsUI()
     end
     return
   end
@@ -1870,6 +1982,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
       C_Timer.After(0.75, function()
         -- Only print on first login
         Refresh(not firstLogin)
+        RefreshOptionsUI()
         firstLogin = false
       end)
       -- Late scan for Dominos/ElvUI that load after us
@@ -1886,6 +1999,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
     if pendingRefresh then
       Refresh(true)
     end
+    RefreshOptionsUI()
     return
   end
 
@@ -1901,18 +2015,22 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
   if event == "ACTIONBAR_SLOT_CHANGED" or event == "ACTIONBAR_PAGE_CHANGED" or event == "UPDATE_MACROS" then
     if InCombatLockdown() then
       pendingRefresh = true
+      RefreshOptionsUI()
       return
     end
     DebouncedRefresh()
+    RefreshOptionsUI()
     return
   end
 
   if InCombatLockdown() then
     pendingRefresh = true
+    RefreshOptionsUI()
     return
   end
 
   Apply()
+  RefreshOptionsUI()
 end)
 
 -- ---------------------------------------------------------------------------
@@ -2064,24 +2182,10 @@ SlashCmdList.PETASSIST = function(msg)
       Print(string.format(L.RECALL_BOUND, db.recallKey))
     end
   elseif cmd == "test" or cmd == "тест" then
-    local buttonName = rest ~= "" and rest or "ActionButton1"
-    local btn = _G[buttonName]
-    if not btn or type(btn.GetAttribute) ~= "function" then
-      Print(string.format(L.TEST_BAD_BUTTON, buttonName))
-      return
-    end
-    local slot = SlotFromButton(btn)
-    local actionType, id
-    if slot then actionType, id = GetActionInfo(slot) end
-    local action, reason = ResolveAction(actionType, id)
-    local prepared = slot and header:GetAttribute("pa_slot_" .. slot) or PA_NONE
-    local name = actionType == "spell" and SpellName(id)
-    if actionType == "macro" then name = GetMacroInfo(id) end
-    Print(string.format(L.TEST_DETAIL, buttonName, tostring(slot), tostring(actionType),
-      tostring(id), tostring(name), tostring(action), tostring(prepared), reason,
-      tostring(pendingRefresh), tostring(InCombatLockdown())))
-    Print(string.format(L.TEST_NATIVE, tostring(wrapped[btn] == true), tostring(DB().stance),
-      tostring(DB().macroPolicy)))
+    local detail, native, result = InspectButton(rest)
+    if not detail then Print(result); return end
+    Print(detail)
+    Print(native)
   elseif cmd == "status" or cmd == "статус" then
     local statusText = db.enabled and string.format(L.STATUS_ENABLED, VERSION) or L.STATUS_DISABLED
     Print(string.format(L.STATUS_OUTPUT,
@@ -2092,4 +2196,5 @@ SlashCmdList.PETASSIST = function(msg)
   else
     Print(L.UNKNOWN_COMMAND)
   end
+  RefreshOptionsUI()
 end

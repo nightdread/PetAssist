@@ -82,6 +82,7 @@ for keep_target in [True, False]:
         event("PLAYER_ENTERING_WORLD")
         flush()
         assert(PetAssistDB.keepTarget == TEST_KEEP_TARGET)
+        PetAssistOptionsPanel:Show()
         assert(PetAssistOptionsPanel.keepTargetCheck:GetChecked() == TEST_KEEP_TARGET)
         click("2")
         local macro = TEST_KEEP_TARGET and "/petattack [@pettarget,noexists][@pettarget,dead] target"

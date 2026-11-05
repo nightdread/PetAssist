@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.9.0
+
+- Organize settings into General, Advanced, Rules and Diagnostics, with clearer descriptions and combat status.
+- Add graphical action-bar refresh, button inspection, and per-button diagnostic reports; existing chat commands remain available.
+- Verify graphical actions and deferred combat updates in automated tests. In-game layout and protected behavior still require validation.
+
 ## 1.8.0
 
 - Add an experimental, opt-in keep-target setting: suppress PetAssist attack orders while the pet has a living target. Other commands and pet stance can still change the target; in-game validation is required.

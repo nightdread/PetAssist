@@ -96,6 +96,7 @@ function Frame:SetChecked(value) self.checked = value end
 function Frame:GetChecked() return self.checked end
 function Frame:SetText(value) self.text = value end
 function Frame:GetText() return self.text or "" end
+function Frame:IsShown() return self.shown == true end
 function Frame:GetParent() return self.parent end
 function Frame:SetParent(value) self.parent = value end
 function Frame:Hide()
@@ -114,7 +115,7 @@ for _, method in ipairs({"RegisterForClicks", "RegisterForDrag", "RegisterEvent"
   "SetWidth", "SetHeight", "SetJustifyH", "SetBackdrop", "SetMultiLine", "SetFontObject", "SetMaxLetters", "SetFocus", "HighlightText", "SetPropagateKeyboardInput", "ClearAllPoints",
   "SetFrameStrata", "SetAutoFocus", "ClearFocus"}) do Frame[method] = function() end end
 function CreateFrame(kind, name, parent, template)
-  local f = setmetatable({name=name, parent=parent, attrs={}, refs={}, scripts={}}, Frame)
+  local f = setmetatable({name=name, parent=parent, attrs={}, refs={}, scripts={}, shown=true}, Frame)
   if name then _G[name] = f end
   frames[#frames + 1] = f
   if template == "UICheckButtonTemplate" then _G[name .. "Text"] = f:CreateFontString() end
@@ -187,7 +188,7 @@ C_Timer = {
 Settings = {
   RegisterCanvasLayoutCategory = function() return {GetID=function() return 1 end} end,
   RegisterAddOnCategory = function() end,
-  OpenToCategory = function() end,
+  OpenToCategory = function() if PetAssistOptionsPanel then PetAssistOptionsPanel:Show() end end,
 }
 local bar = CreateFrame("Frame", "TestBar")
 bar:SetAttribute("actionpage", 1)
@@ -273,6 +274,7 @@ end
 event("ADDON_LOADED", "PetAssist")
 event("PLAYER_ENTERING_WORLD")
 flush()
+PetAssistOptionsPanel:Show()
 check("Fear recalls once and executes original action", function()
   click("1")
   assert(#petCommands == 1 and petCommands[1] == "/petpassive\n/petfollow")
@@ -547,6 +549,115 @@ check("custom exclusions can be added and removed in settings", function()
   click("1"); assert(#petCommands==0)
   f.excludeRemove.scripts.OnClick(); assert(not PetAssistDB.blacklist["life tap"])
   command("mode harm")
+end)
+check("graphical inspector handles default, third-party and unknown buttons", function()
+  local f=PetAssistOptionsPanel
+  f.selectTab("diagnostics")
+  f.diagnosticName:SetText("   ")
+  f.testButton.scripts.OnClick(f.testButton)
+  assert(f.diagnosticResult:GetText():find("ActionButton1",1,true))
+  f.diagnosticName:SetText("  BT4Button1  ")
+  f.testButton.scripts.OnClick(f.testButton)
+  local gui=f.diagnosticResult:GetText()
+  assert(gui:find("BT4Button1",1,true) and gui:find("Send pet to attack",1,true))
+  command("test BT4Button1")
+  assert(messages[#messages-1]:find("slot=25",1,true))
+  f.diagnosticName:SetText("MissingButton")
+  f.testButton.scripts.OnClick(f.testButton)
+  assert(f.diagnosticResult:GetText():find("Unknown action button: MissingButton",1,true))
+  command("test MissingButton")
+  assert(messages[#messages]:find("Unknown action button: MissingButton",1,true))
+end)
+check("graphical inspector clears stale results when input or state changes", function()
+  local f=PetAssistOptionsPanel
+  f.selectTab("diagnostics")
+  f.diagnosticName:SetText("ActionButton1")
+  f.testButton.scripts.OnClick(f.testButton)
+  assert(f.diagnosticResult:GetText():find("ActionButton1",1,true))
+  f.diagnosticName:SetText("ActionButton2")
+  f.diagnosticName:GetScript("OnTextChanged")(f.diagnosticName)
+  assert(f.diagnosticResult:GetText()=="")
+  f.testButton.scripts.OnClick(f.testButton)
+  assert(f.diagnosticResult:GetText():find("ActionButton2",1,true))
+  f.keepTargetCheck:SetChecked(true); f.keepTargetCheck.scripts.OnClick(f.keepTargetCheck)
+  assert(f.diagnosticResult:GetText()=="")
+  f.keepTargetCheck:SetChecked(false); f.keepTargetCheck.scripts.OnClick(f.keepTargetCheck)
+  f.testButton.scripts.OnClick(f.testButton)
+  assert(f.diagnosticResult:GetText():find("ActionButton2",1,true))
+  combat=true; event("PLAYER_REGEN_DISABLED")
+  assert(f.diagnosticResult:GetText()=="")
+  f.testButton.scripts.OnClick(f.testButton)
+  assert(f.diagnosticResult:GetText():find("ActionButton2",1,true))
+  combat=false; event("PLAYER_REGEN_ENABLED")
+  assert(f.diagnosticResult:GetText()=="")
+  f.testButton.scripts.OnClick(f.testButton)
+  assert(f.diagnosticResult:GetText():find("ActionButton2",1,true))
+  event("ACTIONBAR_PAGE_CHANGED")
+  assert(f.diagnosticResult:GetText()=="")
+  assert(f.statusText:GetText():find("being refreshed",1,true))
+  flush()
+  assert(f.statusText:GetText():find("Settings applied",1,true))
+end)
+check("hidden settings synchronize with saved state when reopened", function()
+  local f=PetAssistOptionsPanel
+  f:Hide()
+  command("keeptarget on")
+  assert(PetAssistDB.keepTarget==true and not f.keepTargetCheck:GetChecked())
+  f:Show()
+  assert(f.keepTargetCheck:GetChecked())
+  command("keeptarget off")
+  assert(not f.keepTargetCheck:GetChecked())
+end)
+check("graphical report uses the selected action button", function()
+  local f=PetAssistOptionsPanel
+  f.diagnosticName:SetText(" BT4Button1 ")
+  f.reportButton.scripts.OnClick(f.reportButton)
+  local report=PetAssistDebugReport.edit:GetText()
+  assert(report:find("BT4Button1 slot=25",1,true))
+  f.diagnosticName:SetText("MissingButton")
+  f.reportButton.scripts.OnClick(f.reportButton)
+  assert(PetAssistDebugReport.edit:GetText():find("unknown button=MissingButton",1,true))
+  f.diagnosticName:SetText("")
+  f.reportButton.scripts.OnClick(f.reportButton)
+  assert(PetAssistDebugReport.edit:GetText():find("ActionButton1 slot=1",1,true))
+end)
+check("graphical refresh defers protected changes and updates status after combat", function()
+  local f=PetAssistOptionsPanel
+  f.selectTab("diagnostics")
+  local previous=PetAssistHeader:GetAttribute("pa_slot_2")
+  combat=true
+  actions[2]={"spell",1454}
+  f.refreshButton.scripts.OnClick(f.refreshButton)
+  assert(PetAssistHeader:GetAttribute("pa_slot_2")==previous)
+  assert(f.statusText:GetText():find("waiting for combat",1,true))
+  combat=false; event("PLAYER_REGEN_ENABLED")
+  assert(PetAssistHeader:GetAttribute("pa_slot_2")==0)
+  assert(not f.statusText:GetText():find("waiting for combat",1,true))
+  actions[2]={"spell",172}; command("refresh")
+end)
+check("graphical enable switch and slash commands update the same status", function()
+  local f=PetAssistOptionsPanel
+  f.selectTab("diagnostics")
+  assert(f.statusText:GetText():find("enabled in settings",1,true))
+  f.enableCheck:SetChecked(false); f.enableCheck.scripts.OnClick(f.enableCheck)
+  assert(PetAssistDB.enabled==false and not bindings["1"])
+  assert(f.statusText:GetText():find("disabled in settings",1,true))
+  command("on")
+  assert(PetAssistDB.enabled==true and bindings["1"])
+  assert(f.enableCheck:GetChecked() and f.statusText:GetText():find("enabled in settings",1,true))
+end)
+check("graphical log controls preserve slash command compatibility", function()
+  local f=PetAssistOptionsPanel
+  f.debugCheck:SetChecked(true); f.debugCheck.scripts.OnClick(f.debugCheck)
+  assert(PetAssistDB.debug==true)
+  event("UI_ERROR_MESSAGE",50,"private")
+  assert(#PetAssistDebugDB.entries>0)
+  f.clearDebugButton.scripts.OnClick(f.clearDebugButton)
+  assert(#PetAssistDebugDB.entries==0)
+  command("debug off")
+  assert(PetAssistDB.debug==false and not f.debugCheck:GetChecked())
+  command("debug clear")
+  f.selectTab("general")
 end)
 check("switching tabs cancels key capture and keeps preferences", function()
   local f=PetAssistOptionsPanel
