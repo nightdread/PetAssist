@@ -110,6 +110,14 @@ Conditional macros (`[mod:shift]`, `[@mouseover]`, `;`), `/castsequence`, `/use`
 
 `/pa macros attack|recall|ignore` applies that default policy to macros without their own rule. A macro containing an explicit `/pet...` command always owns pet behavior: PetAssist leaves it alone, even when an attack/recall rule is set. Native macro execution and spell ranks are preserved. PetAssist's automatic target remains `@target`; it does not infer a conditional macro's selected target.
 
+### Why didn't my pet attack?
+
+- Check that PetAssist is enabled, you have a living pet, and your current target is a living enemy. PetAssist commands target `@target`, including when a macro casts at `@mouseover`.
+- Crowd-control abilities may recall the pet instead. Afterward, an allowed attack action can send it in again, so be careful not to break your own crowd control.
+- Complex macros are ignored by default. In **Rules**, add the exact macro name and choose attack, recall, or ignore. A macro with its own `/pet...` command still controls the pet itself.
+- Settings changed in combat apply after combat. For an action-bar button, `/pa test ActionButton1` shows the selected policy and reason; replace the button name as needed. `/pa refresh` rebuilds bindings outside combat.
+- Spellbook casts are not hooked. Use an action-bar button, and check the compatibility notes below for your client and bar addon.
+
 ## Reporting problems
 
 1. Turn on recording: `/pa debug on` (or **Advanced → Troubleshooting**).

@@ -83,7 +83,7 @@ local TRANSLATIONS = {
     ENABLED = "Enabled",
     REFRESH_AFTER_COMBAT = "refresh after combat…",
     SOFTCC_GUARD = "SoftCC Guard — recall pet on Fear/Banish (passive+follow)",
-    MODE_ALL_DESC = "all — pet on EVERY button (including Fear)",
+    MODE_ALL_DESC = "all — spells and items, subject to rules and SoftCC",
     MODE_CUSTOM_DESC = "custom — pet always, except /pa block",
     MODE_HARM_DESC = "harm — pet on damage/DoTs, NOT on Fear/stones/buffs",
     MODE_LABEL = "Mode:",
@@ -164,7 +164,7 @@ local TRANSLATIONS = {
     ENABLED = "Включён",
     REFRESH_AFTER_COMBAT = "обновление после боя…",
     SOFTCC_GUARD = "SoftCC Guard — на Fear/Banish отзывать пета (passive+follow)",
-    MODE_ALL_DESC = "all — пет на КАЖДУЮ кнопку (включая Fear)",
+    MODE_ALL_DESC = "all — способности и предметы с учётом правил и SoftCC",
     MODE_CUSTOM_DESC = "custom — пет всегда, кроме /pa block",
     MODE_HARM_DESC = "harm — пет на урон/DoT, НЕ на Fear/камни/баффы",
     MODE_LABEL = "Режим:",
@@ -207,7 +207,7 @@ local TRANSLATIONS = {
     ENABLED = "Aktiviert",
     REFRESH_AFTER_COMBAT = "Aktualisierung nach dem Kampf…",
     SOFTCC_GUARD = "SoftCC-Wächter — ruft Begleiter bei Furcht/Verbannung zurück (passiv+folgen)",
-    MODE_ALL_DESC = "all — Begleiter auf JEDER Taste (einschl. Furcht)",
+    MODE_ALL_DESC = "all — Zauber und Gegenstände, abhängig von Regeln und SoftCC",
     MODE_CUSTOM_DESC = "custom — Begleiter immer, außer /pa block",
     MODE_HARM_DESC = "harm — Begleiter auf Schaden/DoTs, NICHT auf Furcht/Steine/Buffs",
     MODE_LABEL = "Modus:",
@@ -252,7 +252,7 @@ local TRANSLATIONS = {
     ENABLED = "Activé",
     REFRESH_AFTER_COMBAT = "actualisation après le combat…",
     SOFTCC_GUARD = "Garde SoftCC — rappelle le familier sur Peur/Bannissement (passif+suivre)",
-    MODE_ALL_DESC = "all — familier sur CHAQUE bouton (y compris Peur)",
+    MODE_ALL_DESC = "all — sorts et objets, selon les règles et SoftCC",
     MODE_CUSTOM_DESC = "custom — familier toujours, sauf /pa block",
     MODE_HARM_DESC = "harm — familier sur dégâts/DoTs, PAS sur Peur/pierres/buffs",
     MODE_LABEL = "Mode :",
@@ -297,7 +297,7 @@ local TRANSLATIONS = {
     ENABLED = "Activado",
     REFRESH_AFTER_COMBAT = "actualización después del combate…",
     SOFTCC_GUARD = "Guardia SoftCC — recuerda la mascota en Miedo/Destierro (pasivo+seguir)",
-    MODE_ALL_DESC = "all — mascota en CADA botón (incluido Miedo)",
+    MODE_ALL_DESC = "all — hechizos y objetos, según reglas y SoftCC",
     MODE_CUSTOM_DESC = "custom — mascota siempre, excepto /pa block",
     MODE_HARM_DESC = "harm — mascota en daño/DoTs, NO en Miedo/piedras/buffs",
     MODE_LABEL = "Modo:",
@@ -349,7 +349,7 @@ local TRANSLATIONS = {
     ENABLED = "Ativado",
     REFRESH_AFTER_COMBAT = "atualização após o combate…",
     SOFTCC_GUARD = "Guarda SoftCC — chama mascote em Medo/Banimento (passivo+seguir)",
-    MODE_ALL_DESC = "all — mascote em CADA botão (incluindo Medo)",
+    MODE_ALL_DESC = "all — feitiços e itens, sujeitos às regras e ao SoftCC",
     MODE_CUSTOM_DESC = "custom — mascote sempre, exceto /pa block",
     MODE_HARM_DESC = "harm — mascote em dano/DoTs, NÃO em Medo/pedras/buffs",
     MODE_LABEL = "Modo:",
@@ -394,7 +394,7 @@ local TRANSLATIONS = {
     ENABLED = "Attivato",
     REFRESH_AFTER_COMBAT = "aggiornamento dopo il combattimento…",
     SOFTCC_GUARD = "Guardia SoftCC — richiama mascotte su Paura/Esilio (passivo+segui)",
-    MODE_ALL_DESC = "all — mascotte su OGNI pulsante (incluso Paura)",
+    MODE_ALL_DESC = "all — incantesimi e oggetti, secondo regole e SoftCC",
     MODE_CUSTOM_DESC = "custom — mascotte sempre, eccetto /pa block",
     MODE_HARM_DESC = "harm — mascotte su danno/DoTs, NON su Paura/pietre/buff",
     MODE_LABEL = "Modalità:",
@@ -441,7 +441,7 @@ local TRANSLATIONS = {
     ENABLED = "활성화",
     REFRESH_AFTER_COMBAT = "전투 후 새로고침…",
     SOFTCC_GUARD = "SoftCC 가드 — 공포/추방 시 소환수 회수 (수동+따라가기)",
-    MODE_ALL_DESC = "all — 모든 버튼에 소환수 (공포 포함)",
+    MODE_ALL_DESC = "all — 주문과 아이템, 규칙 및 SoftCC 적용",
     MODE_CUSTOM_DESC = "custom — 항상 소환수, /pa block 제외",
     MODE_HARM_DESC = "harm — 피해/DoT에만 소환수, 공포/돌/버프는 제외",
     MODE_LABEL = "모드:",
@@ -459,7 +459,7 @@ local TRANSLATIONS = {
     ENABLED = "已启用",
     REFRESH_AFTER_COMBAT = "战斗后刷新…",
     SOFTCC_GUARD = "SoftCC 守护 — 恐惧/放逐时召回宠物 (被动+跟随)",
-    MODE_ALL_DESC = "all — 每个按钮都发宠物 (包括恐惧)",
+    MODE_ALL_DESC = "all — 法术和物品，受规则和 SoftCC 影响",
     MODE_CUSTOM_DESC = "custom — 总是发宠物, 除了 /pa block",
     MODE_HARM_DESC = "harm — 伤害/DoT 发宠物, 恐惧/石头/增益不发",
     MODE_LABEL = "模式:",
@@ -477,7 +477,7 @@ local TRANSLATIONS = {
     ENABLED = "已啟用",
     REFRESH_AFTER_COMBAT = "戰鬥後重新整理…",
     SOFTCC_GUARD = "SoftCC 守護 — 恐懼/放逐時召回寵物 (被動+跟隨)",
-    MODE_ALL_DESC = "all — 每個按鈕都發寵物 (包括恐懼)",
+    MODE_ALL_DESC = "all — 法術和物品，受規則和 SoftCC 影響",
     MODE_CUSTOM_DESC = "custom — 總是發寵物, 除了 /pa block",
     MODE_HARM_DESC = "harm — 傷害/DoT 發寵物, 恐懼/石頭/增益不發",
     MODE_LABEL = "模式:",
@@ -498,6 +498,7 @@ local UI_TRANSLATIONS = {
     UNWRAP_FAILED = "Could not restore %s: %s",
     UI_DEBUG = "Troubleshooting", UI_DEBUG_ENABLE = "Record diagnostic events (off by default)",
     UI_DEBUG_HINT = "Enable, reproduce the issue, then copy a report. Keeps the last 100 entries after /reload. No character names or macro text.",
+    UI_TEST_HINT = "/pa test ActionButton1 shows the action policy and reason. Auto mode skips complex macros; add a rule if needed. PetAssist uses your current target (@target).",
     UI_REPORT = "Copy diagnostic report", UI_DEBUG_CLEAR = "Clear log",
     DEBUG_ON = "Debug recording enabled. Reproduce the issue, then use /pa report.",
     DEBUG_OFF = "Debug recording disabled; the existing log is kept.", DEBUG_CLEARED = "Diagnostic log cleared.",
@@ -532,6 +533,7 @@ local UI_TRANSLATIONS = {
     UNWRAP_FAILED = "Не удалось восстановить %s: %s",
     UI_DEBUG = "Диагностика", UI_DEBUG_ENABLE = "Записывать события отладки (по умолчанию выключено)",
     UI_DEBUG_HINT = "Включите запись, повторите проблему и скопируйте отчёт. Последние 100 записей сохраняются после /reload. Без имён персонажей и текста макросов.",
+    UI_TEST_HINT = "/pa test ActionButton1 показывает правило и причину. В режиме auto сложные макросы пропускаются; можно назначить правило. PetAssist использует текущую цель (@target).",
     UI_REPORT = "Скопировать отчёт", UI_DEBUG_CLEAR = "Очистить журнал",
     DEBUG_ON = "Отладка включена. Повторите проблему и откройте /pa report.",
     DEBUG_OFF = "Отладка выключена; записанный журнал сохранён.", DEBUG_CLEARED = "Журнал отладки очищен.",
@@ -1534,7 +1536,7 @@ local function CreateOptions()
     return content
   end
   local general = Page("general", 650)
-  local advanced = Page("advanced", 690)
+  local advanced = Page("advanced", 790)
   local rules = Page("rules", 650)
   local function CancelCapture()
     if f.recallCapture then
@@ -1650,6 +1652,7 @@ local function CreateOptions()
   Text(advanced, L.UI_DEBUG_HINT, 562)
   Button(advanced, L.UI_REPORT, 4, 628, 270, function() OpenDebugReport() end)
   Button(advanced, L.UI_DEBUG_CLEAR, 284, 628, 200, ClearDebugLog)
+  Text(advanced, L.UI_TEST_HINT, 670)
 
   Text(rules, L.UI_RULES_HINT, 8)
   Text(rules, L.UI_NAME, 66, true)

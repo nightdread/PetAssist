@@ -425,6 +425,37 @@ check("diagnostics handle arbitrary and invalid buttons", function()
   command("test BT4Button1"); command("test MissingButton")
   assert(messages[#messages]:find("Unknown action button",1,true))
 end)
+check("diagnostics explain complex macros and explicit rules", function()
+  local previousAction, previousMacro, previousMode, previousPolicy = actions[1], macros[1], PetAssistDB.mode, PetAssistDB.macroPolicy
+  actions[1]={"macro",1}
+  macros[1]={"Diagnostic macro", "/cast [mod:shift] Fear; Corruption"}
+  command("mode harm"); command("macros auto"); command("refresh")
+  command("test ActionButton1")
+  local detail=messages[#messages-1]
+  assert(detail:find("policy=0 | prepared=0",1,true))
+  assert(detail:find("reason=complex macro: choose an explicit rule",1,true))
+  command("rule attack Diagnostic macro")
+  command("test ActionButton1")
+  detail=messages[#messages-1]
+  assert(detail:find("policy=1 | prepared=1",1,true))
+  assert(detail:find("reason=explicit spell/macro rule",1,true))
+  command("rule clear Diagnostic macro")
+  actions[1], macros[1] = previousAction, previousMacro
+  command("mode " .. previousMode); command("macros " .. previousPolicy)
+end)
+check("diagnostics explain pet-owning macros even with an explicit rule", function()
+  local previousAction, previousMacro = actions[1], macros[1]
+  actions[1]={"macro",1}
+  macros[1]={"Diagnostic macro", "/petfollow\n/cast Fear"}
+  command("rule attack Diagnostic macro")
+  command("test ActionButton1")
+  local detail=messages[#messages-1]
+  assert(detail:find("policy=0 | prepared=0",1,true))
+  assert(detail:find("reason=macro controls its own pet",1,true))
+  command("rule clear Diagnostic macro")
+  actions[1], macros[1] = previousAction, previousMacro
+  command("refresh")
+end)
 check("rule editor applies and clears same policy as commands", function()
   local f=PetAssistOptionsPanel
   f.ruleName:SetText("Corruption")

@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.7.1
+
+### Clarity and troubleshooting
+- Clarify that all mode is subject to SoftCC and explicit rules, including in localized descriptions.
+- Explain common reasons a pet may not attack, including complex macros, target selection, and changes deferred until after combat.
+- Add practical troubleshooting guidance in the settings panel.
+
+### Validation
+- Automated Lua 5.1 regression and initialization checks; real-client validation remains necessary.
+- Forever remains experimental pending in-game testing.
+
 ## 1.7.0
 
 ### Forever (experimental)
