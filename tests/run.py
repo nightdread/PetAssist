@@ -1,6 +1,7 @@
 """Run the addon regression suite with Lua 5.1 (pip install lupa==2.8)."""
 from pathlib import Path
 import argparse
+import re
 from zipfile import ZipFile
 from lupa.lua51 import LuaRuntime
 
@@ -33,6 +34,27 @@ lua.globals().ADDON_SOURCE = addon_source
 suite = (root / "tests" / "regression.lua").read_text()
 lua.execute(suite)
 fixture = suite.split("local passed = 0")[0]
+
+# The packager may replace the version placeholder with a tag containing `v`.
+for version in ["v1.9.1", "1.9.1", "@project-version@"]:
+    runtime = LuaRuntime(unpack_returned_tuples=True)
+    runtime.globals().ADDON_SOURCE = re.sub(
+        r'local VERSION = "[^"]*"', lambda _: f'local VERSION = "{version}"', addon_source, count=1
+    )
+    runtime.execute(fixture + """
+        event("ADDON_LOADED", "PetAssist")
+        event("PLAYER_ENTERING_WORLD")
+        flush()
+        command("status")
+        local output = table.concat(messages, "\\n")
+        assert(output:find("v1.9.1 ready", 1, true))
+        assert(output:find("enabled v1.9.1", 1, true))
+        assert(not output:find("vv1.9.1", 1, true))
+        command("report")
+        assert(PetAssistDebugReport.edit:GetText():find("version=1.9.1", 1, true))
+    """)
+print("Passed 3 version display checks")
+
 for locale in ["enUS", "ruRU", "deDE", "frFR", "esES", "esMX", "ptBR", "itIT", "koKR", "zhCN", "zhTW"]:
     for player_class in ["HUNTER", "WARLOCK", "MAGE"]:
         runtime = LuaRuntime(unpack_returned_tuples=True)
@@ -50,6 +72,21 @@ for locale in ["enUS", "ruRU", "deDE", "frFR", "esES", "esMX", "ptBR", "itIT", "
             else assert(bindings["1"]); command("test ActionButton1") end
         """)
 print("Passed 33 initialization checks (11 locales, 3 classes)")
+
+runtime = LuaRuntime(unpack_returned_tuples=True)
+runtime.globals().ADDON_SOURCE = addon_source
+runtime.execute(fixture + """
+    event("ADDON_LOADED", "PetAssist")
+    event("PLAYER_ENTERING_WORLD")
+    flush()
+    command("config")
+    local f = PetAssistOptionsPanel
+    f.selectTab("diagnostics")
+    f.lastButton.scripts.OnClick(f.lastButton)
+    assert(f.diagnosticResult:GetText():find("No connected action button", 1, true))
+    assert(f.diagnosticName:GetText() == "")
+""")
+print("Passed empty last-button diagnostic check")
 
 for saved_state in [
     "PetAssistDB = 'invalid'",

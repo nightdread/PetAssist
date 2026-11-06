@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.9.1
+
+- Refresh the settings layout with grouped sections, highlighted choices and a clearer pet-target control.
+- Add a diagnostics shortcut to inspect the last connected action-bar button without enabling recording.
+- Fix duplicate version prefixes in release startup and status messages.
+- Pass automated Lua 5.1 regressions; the updated interface and real-client protected behavior still require in-game validation.
+
 ## 1.9.0
 
 - Organize settings into General, Advanced, Rules and Diagnostics, with clearer descriptions and combat status.

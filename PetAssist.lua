@@ -1,5 +1,5 @@
 --[[
-  PetAssist 1.7.0 — Classic Era + Forever (experimental)
+  PetAssist 1.9.1 — Classic Era + Forever (experimental)
 
   Secure OnClick selects a pet command and delegates the current action slot
   to a separate SecureActionButton. Never /click the active macro button.
@@ -12,8 +12,10 @@ local ADDON_NAME = ...
 local VERSION = "@project-version@"
 -- Unpackaged working copy (placeholder not replaced by packager)
 if VERSION:find("@", 1, true) then
-  VERSION = "1.7.0"
+  VERSION = "1.9.1"
 end
+-- Release tags include a leading v; display strings add their own prefix.
+VERSION = VERSION:gsub("^v", "")
 
 local Compat = PetAssistCompat -- optional; set by Forever/Compat.lua before this file loads
 
@@ -511,8 +513,10 @@ local UI_TRANSLATIONS = {
     UI_ALL = "All supported abilities and items", UI_ALL_HINT = "Also attack when using buffs, stones and other utility actions.",
     UI_CUSTOM = "All supported actions except your exclusions", UI_CUSTOM_HINT = "Manage your excluded names in the Rules tab.",
     UI_STANCE = "Pet stance — choose one", UI_RESTORE = "Set this stance before sending the pet to attack",
-    UI_KEEP_TARGET = "Avoid sending attack commands while the pet has a living target",
-    UI_KEEP_TARGET_HINT = "This limits PetAssist commands; pet stance and other commands can still change its target. Applies after combat.",
+    UI_TARGET_TITLE = "Pet target", UI_KEEP_TARGET = "Keep the pet on its current target (experimental)",
+    UI_KEEP_TARGET_HINT = "When you attack another enemy, PetAssist keeps your pet on its living target. Use the pet attack button to switch manually. Pet stance and other commands may still change its target.",
+    UI_TARGET_KEPT = "|cff40ff40On:|r Pet stays on its living target when you change targets.",
+    UI_TARGET_SWITCHES = "|cffffd100Off:|r Pet follows your target when an eligible ability is used.",
     KEEP_TARGET_USAGE = "Usage: /pa keeptarget on|off", KEEP_TARGET_STATUS = "Keep pet target: %s (changes apply after combat)",
     UI_DEFENSIVE = "Defensive", UI_PASSIVE = "Passive", UI_ASSIST = "Assist",
     UI_STANCE_HINT = "After a recall, the next attack uses this stance if the option is enabled. On Forever, Assist matches the Assist pet stance.",
@@ -536,7 +540,8 @@ local UI_TRANSLATIONS = {
     UI_STATUS_UNAVAILABLE = "Status: action-bar assistance is unavailable or still loading",
     UI_STATUS_PENDING = "Changes are waiting for combat to end.", UI_STATUS_REFRESHING = "Action bars are being refreshed.", UI_STATUS_READY = "Settings applied.",
     UI_REFRESH_BUTTON = "Refresh action bars", UI_REFRESH_HINT = "Rebuild PetAssist action-bar bindings. During combat, this waits until combat ends.",
-    UI_BUTTON_NAME = "Action button name (optional)", UI_BUTTON_HINT = "Enter an action button name, e.g. ActionButton1. Leave blank to inspect ActionButton1.",
+    UI_BUTTON_NAME = "Action button name (optional)", UI_BUTTON_HINT = "Press an action-bar button, then choose Last button. The check uses its current page. Or enter a name; blank uses ActionButton1.",
+    UI_LAST_BUTTON = "Last button", UI_NO_LAST_BUTTON = "No connected action button used yet. Press one, then try again.",
     UI_TEST_BUTTON = "Check button", UI_TEST_RESULT = "%s (slot %s, %s #%s)\nSelected: %s\nPrepared: %s\nReason: %s\nButton hooked: %s\n%s",
     UI_YES = "yes", UI_NO = "no",
     UI_TEST_PENDING = "Changes are pending until combat ends.", UI_TEST_APPLIED = "Current settings have been applied.",
@@ -559,8 +564,10 @@ local UI_TRANSLATIONS = {
     UI_ALL = "Все поддерживаемые способности и предметы", UI_ALL_HINT = "Атаковать также при усилениях, использовании камней и других служебных действиях.",
     UI_CUSTOM = "Все поддерживаемые действия, кроме исключений", UI_CUSTOM_HINT = "Список исключений можно изменить на вкладке «Правила».",
     UI_STANCE = "Стойка питомца — выберите одну", UI_RESTORE = "Устанавливать эту стойку перед отправкой в атаку",
-    UI_KEEP_TARGET = "Не отправлять команду атаки, пока у питомца есть живая цель",
-    UI_KEEP_TARGET_HINT = "Ограничивает команды PetAssist; стойка питомца и другие команды могут менять цель. Применяется после боя.",
+    UI_TARGET_TITLE = "Цель питомца", UI_KEEP_TARGET = "Сохранять цель питомца (экспериментально)",
+    UI_KEEP_TARGET_HINT = "При атаке другого противника питомец останется на своей живой цели. Для смены цели используйте кнопку атаки питомца. Стойка и другие команды всё ещё могут менять цель.",
+    UI_TARGET_KEPT = "|cff40ff40Включено:|r питомец остаётся на своей живой цели.",
+    UI_TARGET_SWITCHES = "|cffffd100Выключено:|r питомец переключается на вашу цель при подходящей способности.",
     KEEP_TARGET_USAGE = "Использование: /pa keeptarget on|off", KEEP_TARGET_STATUS = "Сохранение цели питомца: %s (изменения после боя)",
     UI_DEFENSIVE = "Защитная", UI_PASSIVE = "Пассивная", UI_ASSIST = "Помощь (Assist)",
     UI_STANCE_HINT = "После отзыва следующая атака включает выбранную стойку, если эта настройка включена. В Forever Assist соответствует стойке Assist.",
@@ -584,7 +591,8 @@ local UI_TRANSLATIONS = {
     UI_STATUS_UNAVAILABLE = "Состояние: управление панелями недоступно или ещё загружается",
     UI_STATUS_PENDING = "Изменения ожидают окончания боя.", UI_STATUS_REFRESHING = "Выполняется обновление панелей.", UI_STATUS_READY = "Настройки применены.",
     UI_REFRESH_BUTTON = "Обновить панели", UI_REFRESH_HINT = "Заново настроить панели PetAssist. В бою обновление выполнится после боя.",
-    UI_BUTTON_NAME = "Имя кнопки на панели (необязательно)", UI_BUTTON_HINT = "Например, ActionButton1. Пустое поле проверяет ActionButton1.",
+    UI_BUTTON_NAME = "Имя кнопки на панели (необязательно)", UI_BUTTON_HINT = "Нажмите способность на панели, затем «Последняя кнопка». Проверяется текущая страница. Можно ввести имя вручную; пустое поле — ActionButton1.",
+    UI_LAST_BUTTON = "Последняя кнопка", UI_NO_LAST_BUTTON = "Подключённая кнопка ещё не нажималась. Нажмите способность и повторите.",
     UI_TEST_BUTTON = "Проверить кнопку", UI_TEST_RESULT = "%s (ячейка %s, %s №%s)\nВыбрано: %s\nПодготовлено: %s\nПричина: %s\nКнопка подключена: %s\n%s",
     UI_YES = "да", UI_NO = "нет",
     UI_TEST_PENDING = "Изменения ожидают окончания боя.", UI_TEST_APPLIED = "Текущие настройки применены.",
@@ -1068,7 +1076,7 @@ end
 -- Diagnostics are read-only observers. No protected calls or frame attributes
 -- are changed by recording or generating reports, including during combat.
 local DEBUG_LIMIT = 100
-local debugStore, reportFrame
+local debugStore, reportFrame, lastActionButton
 local observedButtons = {}
 local function Diagnostics()
   if debugStore then return debugStore end
@@ -1106,6 +1114,11 @@ local function ObserveButton(btn, delegate)
   if observedButtons[btn] then return end
   observedButtons[btn] = true
   btn:HookScript("PostClick", function(self, button, down)
+    -- Only remember connected bar buttons, not the secure delegate. This is
+    -- session-only and does not write to protected frames or enable logging.
+    if not delegate and wrapped[self] and DB().enabled then
+      lastActionButton = self:GetName()
+    end
     if not DB().debug then return end
     local slot = SlotFromButton(self)
     local policy = slot and header:GetAttribute("pa_slot_" .. slot)
@@ -1521,11 +1534,22 @@ RefreshOptionsUI = function()
   f.softCcCheck:SetChecked(db.softCC ~= false)
   f.restoreStanceCheck:SetChecked(db.restoreStance ~= false)
   f.keepTargetCheck:SetChecked(db.keepTarget == true)
+  f.targetSummary:SetText(db.keepTarget and L.UI_TARGET_KEPT or L.UI_TARGET_SWITCHES)
+  f.generalStatus:SetText(pendingRefresh and L.UI_STATUS_PENDING or L.UI_AUTOSAVE)
   f.howlCheck:SetChecked(db.softCCHowl)
   f.frostCheck:SetChecked(db.softCCFrostTrap)
   for _, group in ipairs(f.choiceGroups) do
     for value, check in pairs(group.buttons) do
-      check:SetChecked(value == group.get())
+      local selected = value == group.get()
+      check:SetChecked(selected)
+      local card = group.cards[value]
+      if selected then
+        card.fill:SetColorTexture(0.20, 0.25, 0.20, 0.90)
+        card.accent:SetColorTexture(0.52, 0.75, 0.36, 1)
+      else
+        card.fill:SetColorTexture(0.10, 0.11, 0.13, 0.72)
+        card.accent:SetColorTexture(0.32, 0.31, 0.27, 0.8)
+      end
     end
   end
   f.recallText:SetText(string.format(L.UI_BINDING, db.recallKey or L.RECALL_UNBOUND))
@@ -1578,25 +1602,50 @@ local function CreateOptions()
     check:SetScript("OnClick", click)
     return check
   end
+  -- Use ordinary UI textures, separate from protected action buttons.
+  local function Panel(parent, y, height)
+    local bg = parent:CreateTexture(nil, "BACKGROUND")
+    bg:SetPoint("TOPLEFT", 0, -y)
+    bg:SetSize(504, height)
+    bg:SetColorTexture(0.06, 0.07, 0.09, 0.72)
+    local line = parent:CreateTexture(nil, "BACKGROUND", nil, 1)
+    line:SetPoint("TOPLEFT", 0, -y)
+    line:SetSize(504, 2)
+    line:SetColorTexture(0.64, 0.49, 0.25, 0.8)
+  end
   local function Changed() Refresh(true); RefreshOptionsUI() end
   local function Choices(parent, y, entries, get, set)
-    local group = {buttons = {}, get = get}
+    local group = {buttons = {}, cards = {}, get = get}
     for _, entry in ipairs(entries) do
       local value = entry[1]
+      local card = CreateFrame("Button", nil, parent)
+      card:SetPoint("TOPLEFT", 0, -y)
+      card:SetSize(500, entry[3] and 68 or 32)
+      card.fill = card:CreateTexture(nil, "BACKGROUND")
+      card.fill:SetAllPoints(card)
+      card.accent = card:CreateTexture(nil, "ARTWORK")
+      card.accent:SetPoint("TOPLEFT", 0, 0)
+      card.accent:SetSize(3, entry[3] and 68 or 32)
+      card:SetScript("OnClick", function() set(value); RefreshOptionsUI() end)
+      group.cards[value] = card
       group.buttons[value] = Check(parent, entry[2], y, function()
         set(value)
         RefreshOptionsUI()
       end)
-      if entry[3] then Text(parent, entry[3], y + 32) end
+      if entry[3] then Text(card, entry[3], 32) end
       y = y + (entry[3] and 74 or 36)
     end
     f.choiceGroups[#f.choiceGroups + 1] = group
     return group
   end
+  local icon = f:CreateTexture(nil, "ARTWORK")
+  icon:SetPoint("TOPLEFT", 16, -14)
+  icon:SetSize(34, 34)
+  icon:SetTexture("Interface\\Icons\\Ability_Hunter_BeastTaming")
   local title = Text(f, "PetAssist " .. VERSION, 16, "title")
-  title:ClearAllPoints(); title:SetPoint("TOPLEFT", 16, -16)
+  title:ClearAllPoints(); title:SetPoint("TOPLEFT", 58, -16)
   local sub = Text(f, L.UI_SUBTITLE, 42)
-  sub:ClearAllPoints(); sub:SetPoint("TOPLEFT", 16, -42)
+  sub:ClearAllPoints(); sub:SetPoint("TOPLEFT", 58, -42); sub:SetWidth(458)
   f.enableCheck = Check(f, L.UI_ENABLED, 66, function(self)
     DB().enabled = self:GetChecked() and true or false
     Refresh(true)
@@ -1616,10 +1665,16 @@ local function CreateOptions()
     pages[key] = scroll
     return content
   end
-  local general = Page("general", 790)
+  local general = Page("general", 910)
   local advanced = Page("advanced", 540)
   local rules = Page("rules", 650)
   local diagnostics = Page("diagnostics", 790)
+  Panel(general, 0, 210)
+  Panel(general, 214, 256)
+  Panel(general, 474, 160)
+  Panel(general, 644, 245)
+  Panel(advanced, 0, 210)
+  Panel(advanced, 216, 300)
   local function CancelCapture()
     if f.recallCapture then
       f.recallCapture:Hide()
@@ -1640,14 +1695,22 @@ local function CreateOptions()
   tabs.rules = Button(f, L.UI_RULES, 268, 106, 120, function() SelectTab("rules") end)
   tabs.diagnostics = Button(f, L.UI_DIAGNOSTICS, 394, 106, 120, function() SelectTab("diagnostics") end)
   f.selectTab = SelectTab
-  Text(general, L.UI_MODE, 8, true)
-  f.modeChoices = Choices(general, 32, {
+  Text(general, L.UI_TARGET_TITLE, 8, true)
+  f.keepTargetCheck = Check(general, L.UI_KEEP_TARGET, 34, function(self)
+    DB().keepTarget = self:GetChecked() and true or false; Changed()
+  end)
+  Text(general, L.UI_KEEP_TARGET_HINT, 76)
+  f.targetSummary = Text(general, "", 142)
+  f.generalStatus = Text(general, "", 172)
+
+  Text(general, L.UI_MODE, 220, true)
+  f.modeChoices = Choices(general, 246, {
     {MODE_HARM, L.UI_HARM, L.UI_HARM_HINT},
     {MODE_ALL, L.UI_ALL, L.UI_ALL_HINT},
     {MODE_CUSTOM, L.UI_CUSTOM, L.UI_CUSTOM_HINT},
   }, function() return DB().mode end, function(value) DB().mode = value; Changed() end)
-  Text(general, L.UI_STANCE, 266, true)
-  f.restoreStanceCheck = Check(general, L.UI_RESTORE, 290, function(self)
+  Text(general, L.UI_STANCE, 650, true)
+  f.restoreStanceCheck = Check(general, L.UI_RESTORE, 676, function(self)
     DB().restoreStance = self:GetChecked() and true or false; Changed()
   end)
   local stanceChoices = {
@@ -1656,13 +1719,13 @@ local function CreateOptions()
   if SupportsAssistStance() then
     stanceChoices[#stanceChoices + 1] = {"assist", L.UI_ASSIST}
   end
-  f.stanceChoices = Choices(general, 328, stanceChoices,
+  f.stanceChoices = Choices(general, 714, stanceChoices,
     function() return DB().stance end, function(value) DB().stance = value; Changed() end)
-  Text(general, L.UI_STANCE_HINT, 406)
-  Text(general, L.UI_RECALL, 462, true)
-  Text(general, L.UI_RECALL_HINT, 486)
-  f.recallText = Text(general, "", 532)
-  local bindBtn = Button(general, L.UI_BIND, 4, 558, 210)
+  Text(general, L.UI_STANCE_HINT, 826)
+  Text(general, L.UI_RECALL, 478, true)
+  Text(general, L.UI_RECALL_HINT, 504)
+  f.recallText = Text(general, "", 552)
+  local bindBtn = Button(general, L.UI_BIND, 4, 580, 210)
   f.bindButton = bindBtn
   local binderFrame = CreateFrame("Frame", nil, general)
   binderFrame:Hide()
@@ -1706,15 +1769,10 @@ local function CreateOptions()
   end)
 
 
-  Button(general, L.UI_UNBIND, 224, 558, 210, function()
+  Button(general, L.UI_UNBIND, 224, 580, 210, function()
     CancelCapture()
     DB().recallKey = nil; Changed()
   end)
-
-  f.keepTargetCheck = Check(general, L.UI_KEEP_TARGET, 614, function(self)
-    DB().keepTarget = self:GetChecked() and true or false; Changed()
-  end)
-  Text(general, L.UI_KEEP_TARGET_HINT, 654)
 
   Text(advanced, L.UI_SAFETY, 8, true)
   Text(advanced, L.UI_SAFETY_HINT, 34)
@@ -1751,6 +1809,17 @@ local function CreateOptions()
   f.testButton = Button(diagnostics, L.UI_TEST_BUTTON, 4, 268, 220, function()
     local _, _, result = InspectButton(diagnosticName:GetText())
     diagnosticName:ClearFocus(); f.diagnosticResult:SetText(result)
+    layoutDiagnostics()
+  end)
+  f.lastButton = Button(diagnostics, L.UI_LAST_BUTTON, 234, 268, 250, function()
+    if not lastActionButton then
+      f.diagnosticResult:SetText(L.UI_NO_LAST_BUTTON)
+    else
+      diagnosticName:SetText(lastActionButton)
+      diagnosticName:ClearFocus()
+      local _, _, result = InspectButton(lastActionButton)
+      f.diagnosticResult:SetText(result)
+    end
     layoutDiagnostics()
   end)
   local debugTitle = Text(diagnostics, L.UI_DEBUG, 460, true)

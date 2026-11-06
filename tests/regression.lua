@@ -92,6 +92,8 @@ function Frame:HookScript(name, hook)
   end
 end
 function Frame:CreateFontString() return setmetatable({ attrs={}, scripts={}, refs={} }, Frame) end
+function Frame:CreateTexture() return setmetatable({ attrs={}, scripts={}, refs={} }, Frame) end
+function Frame:SetColorTexture(...) self.color = {...} end
 function Frame:SetChecked(value) self.checked = value end
 function Frame:GetChecked() return self.checked end
 function Frame:SetText(value) self.text = value end
@@ -113,7 +115,7 @@ function Frame:GetStringHeight() return 28 end
 function Frame:Show() self.shown = true; if self.scripts.OnShow then self.scripts.OnShow(self) end end
 for _, method in ipairs({"RegisterForClicks", "RegisterForDrag", "RegisterEvent", "SetPoint", "SetSize",
   "SetWidth", "SetHeight", "SetJustifyH", "SetBackdrop", "SetMultiLine", "SetFontObject", "SetMaxLetters", "SetFocus", "HighlightText", "SetPropagateKeyboardInput", "ClearAllPoints",
-  "SetFrameStrata", "SetAutoFocus", "ClearFocus"}) do Frame[method] = function() end end
+  "SetFrameStrata", "SetAutoFocus", "ClearFocus", "SetAllPoints", "SetTexture"}) do Frame[method] = function() end end
 function CreateFrame(kind, name, parent, template)
   local f = setmetatable({name=name, parent=parent, attrs={}, refs={}, scripts={}, shown=true}, Frame)
   if name then _G[name] = f end
@@ -568,6 +570,29 @@ check("graphical inspector handles default, third-party and unknown buttons", fu
   command("test MissingButton")
   assert(messages[#messages]:find("Unknown action button: MissingButton",1,true))
 end)
+check("last action button works without debug logging and feeds the report", function()
+  local f=PetAssistOptionsPanel
+  f:Show(); f.selectTab("diagnostics")
+  command("debug off")
+  click("2")
+  f.lastButton.scripts.OnClick(f.lastButton)
+  assert(f.diagnosticName:GetText()=="ActionButton2")
+  assert(f.diagnosticResult:GetText():find("ActionButton2",1,true))
+  f.reportButton.scripts.OnClick(f.reportButton)
+  assert(PetAssistDebugReport.edit:GetText():find("ActionButton2 slot=2",1,true))
+  BT4Button1:Click("LeftButton", false, true)
+  f.lastButton.scripts.OnClick(f.lastButton)
+  assert(f.diagnosticName:GetText()=="BT4Button1")
+  combat=true; click("1")
+  f.lastButton.scripts.OnClick(f.lastButton)
+  assert(f.diagnosticName:GetText()=="ActionButton1")
+  combat=false; event("PLAYER_REGEN_ENABLED")
+  command("off")
+  ActionButton2:Click("LeftButton", false, true)
+  f.lastButton.scripts.OnClick(f.lastButton)
+  assert(f.diagnosticName:GetText()=="ActionButton1")
+  command("on")
+end)
 check("graphical inspector clears stale results when input or state changes", function()
   local f=PetAssistOptionsPanel
   f.selectTab("diagnostics")
@@ -607,6 +632,32 @@ check("hidden settings synchronize with saved state when reopened", function()
   assert(f.keepTargetCheck:GetChecked())
   command("keeptarget off")
   assert(not f.keepTargetCheck:GetChecked())
+end)
+check("general settings explain target selection and pending combat changes", function()
+  local f=PetAssistOptionsPanel
+  f:Show(); f.selectTab("general")
+  command("keeptarget off")
+  assert(f.targetSummary:GetText():find("Off:", 1, true))
+  f.keepTargetCheck:SetChecked(true); f.keepTargetCheck.scripts.OnClick(f.keepTargetCheck)
+  assert(PetAssistDB.keepTarget and f.targetSummary:GetText():find("On:", 1, true))
+  combat=true; event("PLAYER_REGEN_DISABLED")
+  f.keepTargetCheck:SetChecked(false); f.keepTargetCheck.scripts.OnClick(f.keepTargetCheck)
+  assert(not PetAssistDB.keepTarget and f.generalStatus:GetText():find("waiting for combat", 1, true))
+  combat=false; event("PLAYER_REGEN_ENABLED")
+  assert(not f.generalStatus:GetText():find("waiting for combat", 1, true))
+  assert(f.targetSummary:GetText():find("Off:", 1, true))
+end)
+check("clicking a choice card updates the setting and selected highlight", function()
+  local f=PetAssistOptionsPanel
+  f:Show(); f.selectTab("general")
+  command("mode harm")
+  local cards = f.modeChoices.cards
+  assert(cards.harm.fill.color[1] > cards.all.fill.color[1])
+  cards.all.scripts.OnClick(cards.all)
+  assert(PetAssistDB.mode == "all" and f.modeChoices.buttons.all:GetChecked())
+  assert(not f.modeChoices.buttons.harm:GetChecked())
+  assert(cards.all.fill.color[1] > cards.harm.fill.color[1])
+  command("mode harm")
 end)
 check("graphical report uses the selected action button", function()
   local f=PetAssistOptionsPanel

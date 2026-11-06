@@ -89,7 +89,7 @@ Toggle: options checkbox or `/pa stance on|off`.
 
 ### Spell and macro rules
 
-Open **Esc → Options → AddOns → PetAssist** to manage the addon without chat commands. The settings are grouped into **General** (attack mode, stance, Recall key), **Advanced** (crowd-control protection and macro behavior), **Rules** (spell/macro overrides and custom exclusions), and **Diagnostics** (status, action-bar refresh, button checks and reports). Pages scroll on smaller settings windows. Choices show the selected value; changes apply automatically, or after combat ends. Chat commands remain available as shortcuts.
+Open **Esc → Options → AddOns → PetAssist** to manage the addon without chat commands. The settings are grouped into **General** (pet target, attack mode, Recall key and stance), **Advanced** (crowd-control protection and macro behavior), **Rules** (spell/macro overrides and custom exclusions), and **Diagnostics** (status, action-bar refresh, button checks and reports). Pages scroll on smaller settings windows. Selected choices are highlighted, and you can click anywhere on a choice to select it. Changes apply automatically, or after combat ends. Chat commands remain available as shortcuts.
 
 In the Rules tab, enter a localized spell name / exact macro name, select a behavior and save. Click a saved rule to edit it; choose default behavior to remove it. Custom exclusions only apply in custom mode. You can also use chat commands:
 
@@ -113,7 +113,7 @@ Conditional macros (`[mod:shift]`, `[@mouseover]`, `;`), `/castsequence`, `/use`
 
 ### Keep the pet's target (experimental)
 
-Enable **General → Avoid sending attack commands while the pet has a living target** or `/pa keeptarget on` to avoid issuing a new PetAssist attack order when the pet already has a living target. The option is off by default. When the pet has no target, or its target is dead, the next eligible action can send it to your current target. To switch targets intentionally, use the game's pet attack button or your own pet macro. SoftCC recall still takes priority. Changes made in combat apply after combat.
+Enable **General → Keep the pet on its current target (experimental)** or `/pa keeptarget on` to avoid issuing a new PetAssist attack order when the pet already has a living target. The option is off by default. When the pet has no target, or its target is dead, the next eligible action can send it to your current target. To switch targets intentionally, use the game's pet attack button or your own pet macro. SoftCC recall still takes priority. Changes made in combat apply after combat.
 
 This limits only PetAssist's attack commands; pet stances, other addons, and manual commands may still affect the pet's target. If stance restoration is enabled, it still sets the selected stance for an eligible player target. The conditional macro needs validation in the real target client, especially when the pet's target dies or changes.
 
@@ -131,10 +131,12 @@ PetAssist sends commands on the input action; it cannot guarantee the spell was 
 
 1. Open **Diagnostics** in PetAssist settings and enable diagnostic recording (or use `/pa debug on`).
 2. Reproduce the problem with the addon enabled; note the ability and whether you used the mouse or a key.
-3. Enter the affected button name in **Diagnostics** and open the report (or use `/pa report ActionButton2`). The report text is selected for copying. Copy it and paste it into a GitHub issue or send it with your reproduction steps.
+3. Press the affected action-bar button, then choose **Diagnostics → Last button** to inspect it and select it for the report. You can instead enter its name or use `/pa report ActionButton2`. Open the report and copy its selected text into a GitHub issue with your reproduction steps.
 4. Turn off recording in **Diagnostics** when finished. The clear-log button erases the recorded events; `/pa debug off` and `/pa debug clear` are also available.
 
 Reports include addon/client versions, locale, class, settings, detected bar addons, occupied action slots and the most recent 100 recorded events. Recording is off by default; its state and bounded journal survive `/reload`. Nothing is sent automatically. Character names, chat, macro bodies/names and custom rule names are omitted.
+
+The last-button shortcut remembers the last connected action-bar button in the current session, even when recording is off. It does not remember the action itself: inspection uses the button's current page. After `/reload`, press a button again. Spellbook casts and buttons PetAssist has not connected cannot be selected this way; manual entry remains available.
 
 Clicks are dispatch attempts; player spell start/success/failure events are recorded separately. Game error IDs and blocked/forbidden addon actions are included while recording. Lua error text is not intercepted: enable `/console scriptErrors 1` and attach the game's Lua error separately if one appears. Reports and debug toggles are available in combat without modifying protected action attributes.
 
@@ -190,8 +192,8 @@ Warlock / Hunter pets. Forever shares Mainline-family APIs; if secure OnClick sn
 The release workflow creates and validates separate `-classic.zip` and `-forever.zip` archives (packager maps `11509` → classic, `16001` → forever), then uploads them sequentially. Releases upload when you push a version tag:
 
 ```bash
-git tag v1.9.0
-git push origin v1.9.0
+git tag v1.9.1
+git push origin v1.9.1
 ```
 
 Requires GitHub secret `CF_API_KEY` and `## X-Curse-Project-ID` in the `.toc`.
