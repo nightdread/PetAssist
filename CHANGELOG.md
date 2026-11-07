@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.9.2
+
+- Add a PetAssist entry to the minimap addon menu for opening settings; Forever in-game validation is pending.
+
 ## 1.9.1
 
 - Refresh the settings layout with grouped sections, highlighted choices and a clearer pet-target control.

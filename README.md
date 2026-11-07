@@ -24,6 +24,7 @@ On Forever, Defensive often auto-engages more like Assist; SoftCC and Recall rem
 
 ## Usage
 
+- In Forever, open PetAssist from the addon menu by the minimap, or use `/pa config`.
 - Put an enemy on target and press your spells from the **action bar**
 - The pet receives `/petattack` together with your cast (when the mode allows it)
 - Default mode **harm**: pet is sent on damage/DoTs; Fear / Banish pull the pet back (**SoftCC Guard**)
@@ -192,8 +193,8 @@ Warlock / Hunter pets. Forever shares Mainline-family APIs; if secure OnClick sn
 The release workflow creates and validates separate `-classic.zip` and `-forever.zip` archives (packager maps `11509` → classic, `16001` → forever), then uploads them sequentially. Releases upload when you push a version tag:
 
 ```bash
-git tag v1.9.1
-git push origin v1.9.1
+git tag v1.9.2
+git push origin v1.9.2
 ```
 
 Requires GitHub secret `CF_API_KEY` and `## X-Curse-Project-ID` in the `.toc`.

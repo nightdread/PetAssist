@@ -1,5 +1,5 @@
 --[[
-  PetAssist 1.9.1 — Classic Era + Forever (experimental)
+  PetAssist 1.9.2 — Classic Era + Forever (experimental)
 
   Secure OnClick selects a pet command and delegates the current action slot
   to a separate SecureActionButton. Never /click the active macro button.
@@ -12,7 +12,7 @@ local ADDON_NAME = ...
 local VERSION = "@project-version@"
 -- Unpackaged working copy (placeholder not replaced by packager)
 if VERSION:find("@", 1, true) then
-  VERSION = "1.9.1"
+  VERSION = "1.9.2"
 end
 -- Release tags include a leading v; display strings add their own prefix.
 VERSION = VERSION:gsub("^v", "")
@@ -1980,6 +1980,11 @@ local function ToggleOptions()
     optionsFrame:SetFrameStrata("DIALOG")
   end
   optionsFrame:Show()
+end
+
+-- Blizzard resolves the compartment callback by its global name from the TOC.
+function PetAssist_CompartmentClick()
+  ToggleOptions()
 end
 
 -- ---------------------------------------------------------------------------

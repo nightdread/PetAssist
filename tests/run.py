@@ -25,9 +25,13 @@ if args.archive:
 else:
     addon_source = (args.addon_source or root / "PetAssist.lua").read_text()
     compat_source = (root / "Forever" / "Compat.lua").read_text()
-    assert "11509" in (root / "PetAssist.toc").read_text()
+    era_toc = (root / "PetAssist.toc").read_text()
+    assert "11509" in era_toc
     forever_toc = (root / "PetAssist_Camelot.toc").read_text()
     assert "16001" in forever_toc and "Forever/Compat.lua" in forever_toc
+
+for toc in (era_toc, forever_toc):
+    assert re.search(r"(?m)^## AddonCompartmentFunc:\s*PetAssist_CompartmentClick\s*$", toc)
 
 lua = LuaRuntime(unpack_returned_tuples=True)
 lua.globals().ADDON_SOURCE = addon_source
@@ -36,7 +40,7 @@ lua.execute(suite)
 fixture = suite.split("local passed = 0")[0]
 
 # The packager may replace the version placeholder with a tag containing `v`.
-for version in ["v1.9.1", "1.9.1", "@project-version@"]:
+for version in ["v1.9.2", "1.9.2", "@project-version@"]:
     runtime = LuaRuntime(unpack_returned_tuples=True)
     runtime.globals().ADDON_SOURCE = re.sub(
         r'local VERSION = "[^"]*"', lambda _: f'local VERSION = "{version}"', addon_source, count=1
@@ -47,11 +51,11 @@ for version in ["v1.9.1", "1.9.1", "@project-version@"]:
         flush()
         command("status")
         local output = table.concat(messages, "\\n")
-        assert(output:find("v1.9.1 ready", 1, true))
-        assert(output:find("enabled v1.9.1", 1, true))
-        assert(not output:find("vv1.9.1", 1, true))
+        assert(output:find("v1.9.2 ready", 1, true))
+        assert(output:find("enabled v1.9.2", 1, true))
+        assert(not output:find("vv1.9.2", 1, true))
         command("report")
-        assert(PetAssistDebugReport.edit:GetText():find("version=1.9.1", 1, true))
+        assert(PetAssistDebugReport.edit:GetText():find("version=1.9.2", 1, true))
     """)
 print("Passed 3 version display checks")
 

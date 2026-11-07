@@ -5,6 +5,7 @@
 ## Author: Artem
 ## Version: @project-version@
 ## IconTexture: Interface\AddOns\PetAssist\icon
+## AddonCompartmentFunc: PetAssist_CompartmentClick
 ## SavedVariablesPerCharacter: PetAssistDB, PetAssistDebugDB
 ## DefaultState: enabled
 ## X-Category: Combat

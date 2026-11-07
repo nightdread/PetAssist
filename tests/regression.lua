@@ -233,6 +233,11 @@ if FOREVER_ONLY then
     assert(PetAssistCompat.DetectForever())
     assert(PetAssistCompat.SupportsAssistStance())
   end)
+  check("Forever compartment click opens settings", function()
+    PetAssistOptionsPanel:Hide()
+    PetAssist_CompartmentClick("PetAssist", "LeftButton")
+    assert(PetAssistOptionsPanel:IsShown())
+  end)
   if FORCE_SNIPPET_FAIL then
     check("snippet failure keeps Recall path and disables wraps", function()
       assert(not bindings["1"])

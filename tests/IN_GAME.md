@@ -1,4 +1,4 @@
-# PetAssist 1.9.1: Classic Era release checklist
+# PetAssist 1.9.2: Classic Era release checklist
 
 The automated suite models native action execution. Basic Warlock damage casts and pet attacks have been confirmed on Classic Era 1.15.9 (build 70003), enUS, with Blizzard bars. The remaining real-client scenarios below are not claimed as completed by the suite.
 
@@ -11,6 +11,7 @@ Install into `_forever_` or `_classic_beta_`. Confirm `/dump select(4, GetBuildI
 3. `/pa stance assist` then damage cast: `/petassist` then `/petattack` when stance restore is on.
 4. If chat reports secure wrapping unavailable: Recall key still works; bars do not double-wrap after `/reload`.
 5. Settings tabs / rules / Howl-Frost opt-ins without Lua errors.
+6. After installing the build, fully restart the client so it reads the updated TOC metadata. Open the addon menu next to the minimap and select PetAssist; its settings must open. Repeat after `/reload`.
 
 Do not mark Forever supported in release notes until items 1–4 pass on the target build.
 
