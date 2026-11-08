@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.9.3-alpha.1
+
+- Add Aggressive to the preferred pet stances on Forever.
+- Prefer the client's Defensive Assist command for the Defensive stance on Forever when the client exposes it.
+- On Forever builds without that command, try the native Defensive pet action on eligible clicks made outside combat.
+- Clarify that the preferred stance is applied by eligible player action-bar actions; in-game verification is still needed.
+
 ## 1.9.2
 
 - Add a PetAssist entry to the minimap addon menu for opening settings; Forever in-game validation is pending.

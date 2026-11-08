@@ -132,6 +132,21 @@ for keep_target in [True, False]:
     """)
 print("Passed 2 saved keep-target setting checks")
 
+runtime = LuaRuntime(unpack_returned_tuples=True)
+runtime.globals().ADDON_SOURCE = addon_source
+runtime.globals().PRELOAD_SOURCE = compat_source
+runtime.globals().CLIENT_INTERFACE = 16001
+runtime.execute(fixture + """
+    PetAssistDB = {stance = "aggressive", restoreStance = true}
+    event("ADDON_LOADED", "PetAssist")
+    event("PLAYER_ENTERING_WORLD")
+    flush()
+    assert(PetAssistDB.stance == "aggressive")
+    click("2")
+    assert(petCommands[1]:find("/petaggressive", 1, true))
+""")
+print("Passed saved aggressive stance check")
+
 for stored in [
     "PetAssistDB={debug=true}; PetAssistDebugDB={entries={'previous-session-marker'}}",
     "PetAssistDB={debug=false}; PetAssistDebugDB='invalid'",

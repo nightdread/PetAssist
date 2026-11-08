@@ -47,7 +47,7 @@ Toggle: options checkbox or `/pa softcc on|off` (default **on**).
 
 ### Stance Restoration
 
-When enabled (default **on**), normal assist spells automatically restore pet stance before attacking:
+When enabled (default **on**), PetAssist applies the preferred stance before sending the pet to attack. For example, with Defensive selected in Classic Era:
 
 ```
 /petdefensive [pet,@target,harm,nodead]
@@ -55,7 +55,7 @@ When enabled (default **on**), normal assist spells automatically restore pet st
 /cast …
 ```
 
-Choose Defensive (default) or Passive in options, or use `/pa stance defensive|passive`. On Forever, **Assist** is also available (`/pa stance assist` → `/petassist`). This sets your preferred stance before assisting; it does not remember the previous stance. Mouse clicks and modifier keybinds use the same behavior. Friendly, dead or absent targets do not change stance.
+Choose Defensive (default) or Passive in options, or use `/pa stance defensive|passive`. On Forever, **Assist** (`/pa stance assist`) and **Aggressive** (`/pa stance aggressive`) are also available. When Forever exposes a separate Defensive Assist command, PetAssist uses it for Defensive. Otherwise, PetAssist looks up the native Defensive pet action on each eligible click made outside combat and falls back to the legacy command during combat. The setting applies to eligible actions on the character's action bar while targeting a living enemy. The Forever fallback still requires in-game validation.
 
 Toggle: options checkbox or `/pa stance on|off`.
 
@@ -68,7 +68,7 @@ Toggle: options checkbox or `/pa stance on|off`.
 | `/pa refresh` | rebuild binds (out of combat) |
 | `/pa config` | Esc → Options → AddOns → PetAssist |
 | `/pa softcc on\|off` | SoftCC Guard (recall pet on Fear/Banish) |
-| `/pa stance on\|off\|defensive\|passive` | Enable/disable preferred stance, or select it |
+| `/pa stance on\|off\|defensive\|passive\|assist\|aggressive` | Enable/disable preferred stance, or select it (assist/aggressive: Forever) |
 | `/pa keeptarget on\|off` | Avoid sending attack orders while the pet has a living target |
 | `/pa howl on\|off` / `/pa frost on\|off` | Include Howl of Terror / Frost Trap in SoftCC |
 | `/pa macros auto\|attack\|recall\|ignore` | Default behavior for macros |

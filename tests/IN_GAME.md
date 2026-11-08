@@ -8,7 +8,8 @@ Install into `_forever_` or `_classic_beta_`. Confirm `/dump select(4, GetBuildI
 
 1. SoftCC Fear/Banish (or Forever equivalents): pet Passive + Follow; spell still casts.
 2. Damage ability keybind + mouse click: pet assist if Defensive does not already auto-send; no blocked-action spam.
-3. `/pa stance assist` then damage cast: `/petassist` then `/petattack` when stance restore is on.
+3. Test Passive, Defensive, Assist and Aggressive as preferred stances, including `/pa stance assist` and `/pa stance aggressive`: after a recall, use an eligible player action-bar attack and confirm the selected stance and attack are applied exactly once. Repeat with both classes and check options and stance persistence after reload.
+   - For the reported Assist-to-Defensive case, choose Defensive in PetAssist and set Assist on the pet bar. Start out of combat, then use a harmful ability from the character's bar. Repeat with a keybind and a mouse click, with Keep Target enabled and disabled. On build 1.60.1.70862, verify that the native Defensive action works on the opening click and that a click made in combat never reuses its slot. If the pet stays in Assist on the opening click, copy the `preparedStanceCommand`, `defensiveAssistAlias` and `defensiveAlias` fields from `/pa report`.
 4. If chat reports secure wrapping unavailable: Recall key still works; bars do not double-wrap after `/reload`.
 5. Settings tabs / rules / Howl-Frost opt-ins without Lua errors.
 6. After installing the build, fully restart the client so it reads the updated TOC metadata. Open the addon menu next to the minimap and select PetAssist; its settings must open. Repeat after `/reload`.

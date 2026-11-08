@@ -79,7 +79,7 @@ local TRANSLATIONS = {
     SLASH_HELP = "Commands: on|off|refresh|test [ButtonName]|status|config|mode|softcc|stance|macros|howl|frost|rule|rules|block|unblock|recall",
     OPTION_USAGE = "Usage: /pa %s on|off",
     MACRO_USAGE = "Usage: /pa macros auto|attack|recall|ignore",
-    STANCE_USAGE = "Usage: /pa stance on|off|passive|defensive|assist",
+    STANCE_USAGE = "Usage: /pa stance on|off|passive|defensive%s",
     SECURE_SNIPPETS_UNAVAILABLE = "Secure action-bar wrapping is unavailable on this client. SoftCC on cast is disabled; Recall key still works. Report the client build if this persists.",
     UI_ASSIST = "Assist",
     ENABLED = "Enabled",
@@ -160,7 +160,7 @@ local TRANSLATIONS = {
     SLASH_HELP = "Команды: on|off|refresh|test [ИмяКнопки]|status|config|mode|softcc|stance|macros|howl|frost|rule|rules|block|unblock|recall",
     OPTION_USAGE = "Использование: /pa %s on|off",
     MACRO_USAGE = "Использование: /pa macros auto|attack|recall|ignore",
-    STANCE_USAGE = "Использование: /pa stance on|off|passive|defensive|assist",
+    STANCE_USAGE = "Использование: /pa stance on|off|passive|defensive%s",
     SECURE_SNIPPETS_UNAVAILABLE = "Обёртка панелей недоступна на этом клиенте. SoftCC при касте отключён; клавиша Recall работает. Сообщите билд клиента, если это повторяется.",
     UI_ASSIST = "Помощь (Assist)",
     ENABLED = "Включён",
@@ -512,14 +512,14 @@ local UI_TRANSLATIONS = {
     UI_HARM_HINT = "Attack with damage spells and curses; leave buffs and utility abilities alone.",
     UI_ALL = "All supported abilities and items", UI_ALL_HINT = "Also attack when using buffs, stones and other utility actions.",
     UI_CUSTOM = "All supported actions except your exclusions", UI_CUSTOM_HINT = "Manage your excluded names in the Rules tab.",
-    UI_STANCE = "Pet stance — choose one", UI_RESTORE = "Set this stance before sending the pet to attack",
+    UI_STANCE = "Pet stance — choose one", UI_RESTORE = "Set the selected stance when PetAssist assists",
     UI_TARGET_TITLE = "Pet target", UI_KEEP_TARGET = "Keep the pet on its current target (experimental)",
     UI_KEEP_TARGET_HINT = "When you attack another enemy, PetAssist keeps your pet on its living target. Use the pet attack button to switch manually. Pet stance and other commands may still change its target.",
     UI_TARGET_KEPT = "|cff40ff40On:|r Pet stays on its living target when you change targets.",
     UI_TARGET_SWITCHES = "|cffffd100Off:|r Pet follows your target when an eligible ability is used.",
     KEEP_TARGET_USAGE = "Usage: /pa keeptarget on|off", KEEP_TARGET_STATUS = "Keep pet target: %s (changes apply after combat)",
-    UI_DEFENSIVE = "Defensive", UI_PASSIVE = "Passive", UI_ASSIST = "Assist",
-    UI_STANCE_HINT = "After a recall, the next attack uses this stance if the option is enabled. On Forever, Assist matches the Assist pet stance.",
+    UI_DEFENSIVE = "Defensive", UI_PASSIVE = "Passive", UI_ASSIST = "Assist", UI_AGGRESSIVE = "Aggressive",
+    UI_STANCE_HINT = "Applies when you use an eligible action on your action bar, including after a recall. Changes made in combat apply after combat.",
     UI_RECALL = "Recall shortcut", UI_RECALL_HINT = "Stop attacking and return to you. Escape cancels key assignment.",
     UI_BIND = "Assign key", UI_UNBIND = "Remove key", UI_BINDING = "Current key: %s",
     UI_SAFETY = "Protect crowd control", UI_SOFTCC = "Recall on Fear, Banish and Freezing Trap",
@@ -563,14 +563,14 @@ local UI_TRANSLATIONS = {
     UI_HARM_HINT = "Атаковать при заклинаниях урона и проклятиях; не реагировать на усиления и служебные способности.",
     UI_ALL = "Все поддерживаемые способности и предметы", UI_ALL_HINT = "Атаковать также при усилениях, использовании камней и других служебных действиях.",
     UI_CUSTOM = "Все поддерживаемые действия, кроме исключений", UI_CUSTOM_HINT = "Список исключений можно изменить на вкладке «Правила».",
-    UI_STANCE = "Стойка питомца — выберите одну", UI_RESTORE = "Устанавливать эту стойку перед отправкой в атаку",
+    UI_STANCE = "Стойка питомца — выберите одну", UI_RESTORE = "Устанавливать выбранную стойку при атаке через PetAssist",
     UI_TARGET_TITLE = "Цель питомца", UI_KEEP_TARGET = "Сохранять цель питомца (экспериментально)",
     UI_KEEP_TARGET_HINT = "При атаке другого противника питомец останется на своей живой цели. Для смены цели используйте кнопку атаки питомца. Стойка и другие команды всё ещё могут менять цель.",
     UI_TARGET_KEPT = "|cff40ff40Включено:|r питомец остаётся на своей живой цели.",
     UI_TARGET_SWITCHES = "|cffffd100Выключено:|r питомец переключается на вашу цель при подходящей способности.",
     KEEP_TARGET_USAGE = "Использование: /pa keeptarget on|off", KEEP_TARGET_STATUS = "Сохранение цели питомца: %s (изменения после боя)",
-    UI_DEFENSIVE = "Защитная", UI_PASSIVE = "Пассивная", UI_ASSIST = "Помощь (Assist)",
-    UI_STANCE_HINT = "После отзыва следующая атака включает выбранную стойку, если эта настройка включена. В Forever Assist соответствует стойке Assist.",
+    UI_DEFENSIVE = "Защитная", UI_PASSIVE = "Пассивная", UI_ASSIST = "Поддержка (Assist)", UI_AGGRESSIVE = "Агрессивная",
+    UI_STANCE_HINT = "Применяется при подходящем действии на панели персонажа, в том числе после отзыва. Изменения настройки в бою вступят в силу после боя.",
     UI_RECALL = "Клавиша отзыва", UI_RECALL_HINT = "Прекратить атаку и вернуться к вам. Escape отменяет назначение клавиши.",
     UI_BIND = "Назначить клавишу", UI_UNBIND = "Убрать клавишу", UI_BINDING = "Текущая клавиша: %s",
     UI_SAFETY = "Защита эффектов контроля", UI_SOFTCC = "Отзывать при Страхе, Изгнании и Замораживающей ловушке",
@@ -876,11 +876,13 @@ local function SpellName(spellId)
   return nil
 end
 
-local function StanceCommand(stance)
-  if Compat and Compat.StanceCommand then
-    return Compat.StanceCommand(stance)
+local function StanceMacro(stance)
+  local condition = "pet,@target,harm,nodead"
+  if Compat and Compat.StanceMacro then
+    return Compat.StanceMacro(stance, condition, header)
   end
-  return stance == "passive" and "/petpassive" or "/petdefensive"
+  local command = stance == "passive" and "/petpassive" or "/petdefensive"
+  return command .. " [" .. condition .. "]"
 end
 
 local function SupportsAssistStance()
@@ -1172,6 +1174,15 @@ local function BuildDebugReport(buttonName)
     "Click records show dispatch attempts, not proof of a successful cast.",
     "Lua error text is not collected; attach the game's Lua error separately if available.",
   }
+  local assistText = header:GetAttribute("pa_assist_text")
+  if assistText and header:GetAttribute("pa_enabled") then
+    lines[#lines + 1] = "preparedStanceCommand="
+      .. (assistText:match("^(/%S+)[^\n]*\n") or "off")
+  end
+  if Compat then
+    lines[#lines + 1] = "defensiveAssistAlias=" .. tostring(SLASH_PET_DEFENSIVEASSIST1)
+      .. " defensiveAlias=" .. tostring(SLASH_PET_DEFENSIVE1)
+  end
   lines[#lines + 1] = "[bar addons]"
   for _, name in ipairs({"Dominos", "Bartender4", "ElvUI", "BugGrabber", "BugSack"}) do
     local loaded = C_AddOns and C_AddOns.IsAddOnLoaded or IsAddOnLoaded
@@ -1245,7 +1256,7 @@ local function SyncPetCommand()
   local petCommand = db.keepTarget == true and PET_KEEP_TARGET or PET
   local text = petCommand
   if db.restoreStance then
-    text = StanceCommand(db.stance) .. " [pet,@target,harm,nodead]\n" .. petCommand
+    text = StanceMacro(db.stance) .. "\n" .. petCommand
   end
   header:SetAttribute("pa_assist_text", text)
   header:SetAttribute("pa_recall_text", SOFTCC)
@@ -1665,14 +1676,15 @@ local function CreateOptions()
     pages[key] = scroll
     return content
   end
-  local general = Page("general", 910)
+  local extraStanceRows = SupportsAssistStance() and 72 or 0
+  local general = Page("general", 878 + extraStanceRows)
   local advanced = Page("advanced", 540)
   local rules = Page("rules", 650)
   local diagnostics = Page("diagnostics", 790)
   Panel(general, 0, 210)
   Panel(general, 214, 256)
   Panel(general, 474, 160)
-  Panel(general, 644, 245)
+  Panel(general, 644, 213 + extraStanceRows)
   Panel(advanced, 0, 210)
   Panel(advanced, 216, 300)
   local function CancelCapture()
@@ -1716,12 +1728,13 @@ local function CreateOptions()
   local stanceChoices = {
     {"defensive", L.UI_DEFENSIVE}, {"passive", L.UI_PASSIVE},
   }
-  if SupportsAssistStance() then
+  if extraStanceRows > 0 then
     stanceChoices[#stanceChoices + 1] = {"assist", L.UI_ASSIST}
+    stanceChoices[#stanceChoices + 1] = {"aggressive", L.UI_AGGRESSIVE}
   end
   f.stanceChoices = Choices(general, 714, stanceChoices,
     function() return DB().stance end, function(value) DB().stance = value; Changed() end)
-  Text(general, L.UI_STANCE_HINT, 826)
+  Text(general, L.UI_STANCE_HINT, 790 + extraStanceRows)
   Text(general, L.UI_RECALL, 478, true)
   Text(general, L.UI_RECALL_HINT, 504)
   f.recallText = Text(general, "", 552)
@@ -2169,13 +2182,14 @@ SlashCmdList.PETASSIST = function(msg)
       db.restoreStance = true
     elseif m == "off" or m == "выкл" or m == "0" then
       db.restoreStance = false
-    elseif m == "passive" or m == "defensive" or (m == "assist" and SupportsAssistStance()) then
+    elseif m == "passive" or m == "defensive"
+      or ((m == "assist" or m == "aggressive") and SupportsAssistStance()) then
       db.stance = m
       db.restoreStance = true
     elseif m == "" then
       db.restoreStance = not (db.restoreStance ~= false)
     else
-      Print(L.STANCE_USAGE)
+      Print(string.format(L.STANCE_USAGE, SupportsAssistStance() and "|assist|aggressive" or ""))
       return
     end
     Refresh(false)

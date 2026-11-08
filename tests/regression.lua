@@ -6,6 +6,11 @@ local frames, bindings, actions, macros, spellNames = {}, {}, {}, {}, {
 }
 local combat, secure, keyDown, page = false, false, true, 1
 local executed, petCommands, messages, timers = {}, {}, {}, {}
+local petActions = {}
+function SecureCmdOptionParse(text)
+  assert(text == "[combat] 1", "unexpected fixture condition")
+  if combat then return "1" end
+end
 local Frame = {}
 Frame.__index = Frame
 function Frame:GetName() return self.name end
@@ -54,11 +59,16 @@ function Frame:CalculateAction()
 end
 function Frame:Click(button, down, mouse)
   local previous = secure
+  if self.scripts.PreClick then
+    secure = false
+    self.scripts.PreClick(self, button, down)
+  end
   secure = true
   local message
   if self.wrapper then
     local newbutton
     newbutton, message = self.wrapper(restricted(self), restricted(self.control), button, down)
+    if newbutton == false then secure = previous; return end
     button = newbutton or button
   end
   local useDown = self:GetEffectiveAttribute("useOnKeyDown", button)
@@ -69,10 +79,15 @@ function Frame:Click(button, down, mouse)
   if down == (not (self.native or mouse) and useDown) then
     if self:GetEffectiveAttribute("type", button) == "action" then
       executed[#executed + 1] = self:CalculateAction()
+    elseif self:GetEffectiveAttribute("type", button) == "pet" then
+      petActions[#petActions + 1] = assert(self:GetEffectiveAttribute("action", button))
     elseif self:GetEffectiveAttribute("type", button) == "macro" then
       local text = self:GetEffectiveAttribute("macrotext", button)
       local prefix, target, mouseButton, phase = text:match("^(.-)\n/click (%S+) (%S+) (%d)$")
       petCommands[#petCommands + 1] = prefix or text
+      if not combat and text:find("^/click %[[^%]]+,nocombat,nopossessbar,novehicleui%] PetAssistDefensiveStance LeftButton 0\n") then
+        PetAssistDefensiveStance:Click("LeftButton", false)
+      end
       -- Re-entering the currently executing macro button is not a reliable
       -- native action dispatch path. Model rejection instead of allowing it.
       if target and target ~= self:GetName() then _G[target]:Click(mouseButton, phase == "1") end
@@ -259,6 +274,67 @@ if FOREVER_ONLY then
       assert(petCommands[1]:find("/petassist", 1, true))
       assert(petCommands[1]:find("/petattack", 1, true))
       assert(#executed == 1 and executed[1] == 2)
+    end)
+    check("Forever aggressive stance is selectable and restored on eligible actions", function()
+      command("stance aggressive")
+      assert(PetAssistDB.stance == "aggressive" and PetAssistDB.restoreStance)
+      assert(PetAssistOptionsPanel.stanceChoices.buttons.aggressive:GetChecked())
+      click("2")
+      assert(petCommands[1]:find("/petaggressive [pet,@target,harm,nodead]", 1, true))
+      assert(petCommands[1]:find("/petattack", 1, true) and #executed == 1)
+      click("1"); assert(petCommands[1] == "/petpassive\n/petfollow")
+      click("2"); assert(petCommands[1]:find("/petaggressive", 1, true))
+      command("stance assist")
+    end)
+    check("Forever preferred stances precede attacks with keep-target enabled", function()
+      command("keeptarget on")
+      for _, entry in ipairs({{"passive", "/petpassive"}, {"defensive", "/petdefensive"},
+          {"assist", "/petassist"}, {"aggressive", "/petaggressive"}}) do
+        command("stance " .. entry[1])
+        click("2")
+        assert(petCommands[1]:find(entry[2] .. " [pet,@target,harm,nodead]", 1, true) == 1)
+        assert(petCommands[1]:find("/petattack [@pettarget,noexists][@pettarget,dead] target", 1, true))
+        assert(#executed == 1)
+      end
+      command("keeptarget off"); command("stance assist")
+    end)
+    check("Forever uses the client Defensive Assist alias when available", function()
+      SLASH_PET_DEFENSIVE1 = "/petdefensive"
+      SLASH_PET_DEFENSIVEASSIST1 = "/testdefensiveassist"
+      command("keeptarget on")
+      command("stance defensive")
+      click("2")
+      assert(#petCommands == 1 and petCommands[1] == "/testdefensiveassist [pet,@target,harm,nodead]\n"
+        .. "/petattack [@pettarget,noexists][@pettarget,dead] target")
+      assert(#executed == 1 and executed[1] == 2)
+      command("report")
+      assert(PetAssistDebugReport.edit:GetText():find("preparedStanceCommand=/testdefensiveassist", 1, true))
+      assert(PetAssistDebugReport.edit:GetText():find("defensiveAssistAlias=/testdefensiveassist defensiveAlias=/petdefensive", 1, true))
+      SLASH_PET_DEFENSIVE1, SLASH_PET_DEFENSIVEASSIST1 = nil, nil
+      command("keeptarget off"); command("stance assist")
+    end)
+    check("Forever resolves the native Defensive slot on each out-of-combat attack", function()
+      local currentSlot = 4
+      NUM_PET_ACTION_SLOTS = 10
+      GetPetActionInfo = function(slot)
+        if slot == currentSlot then return "PET_MODE_DEFENSIVEASSIST", nil, true end
+      end
+      command("stance defensive")
+      click("2")
+      assert(#petActions == 1 and petActions[1] == 4 and #executed == 1)
+      currentSlot = 7
+      click("2")
+      assert(#petActions == 2 and petActions[2] == 7 and #executed == 1)
+      combat = true
+      click("2")
+      PetAssistDefensiveStance:Click("LeftButton", false)
+      assert(#petActions == 2 and #executed == 1)
+      combat = false
+      currentSlot = nil
+      click("2")
+      assert(#petActions == 2 and petCommands[2] == "/petdefensive" and #executed == 1)
+      GetPetActionInfo, NUM_PET_ACTION_SLOTS = nil, nil
+      command("stance assist")
     end)
     check("Forever keep-target setting preserves assist and SoftCC", function()
       command("keeptarget on")
