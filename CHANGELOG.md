@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.9.3
+
+- Add Aggressive to the preferred pet stances on WoW Forever.
+- Keep the character's spell cast on the original action-bar path when applying the preferred stance.
+- Use the client's Defensive Assist command where available. The legacy `/petdefensive` command can fail to switch stance on build 1.60.1.70862.
+- Publish the WoW Forever package.
+
 ## 1.9.3-alpha.2
 
 - Remove the experimental Defensive button click on Forever to restore action-bar casting.

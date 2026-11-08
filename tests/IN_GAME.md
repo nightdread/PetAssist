@@ -1,8 +1,8 @@
-# PetAssist 1.9.2: Classic Era release checklist
+# PetAssist in-game checks
 
 The automated suite models native action execution. Basic Warlock damage casts and pet attacks have been confirmed on Classic Era 1.15.9 (build 70003), enUS, with Blizzard bars. The remaining real-client scenarios below are not claimed as completed by the suite.
 
-# Forever experimental smoke (required before calling Forever “supported”)
+## Forever release checklist
 
 Install into `_forever_` or `_classic_beta_`. Confirm `/dump select(4, GetBuildInfo())` is in the `16xxx` range and the addon loaded `PetAssist_Camelot.toc`.
 
@@ -14,7 +14,11 @@ Install into `_forever_` or `_classic_beta_`. Confirm `/dump select(4, GetBuildI
 5. Settings tabs / rules / Howl-Frost opt-ins without Lua errors.
 6. After installing the build, fully restart the client so it reads the updated TOC metadata. Open the addon menu next to the minimap and select PetAssist; its settings must open. Repeat after `/reload`.
 
-Do not mark Forever supported in release notes until items 1–4 pass on the target build.
+Before a stable Forever release, confirm the scenarios affected by the change on the target build. For 1.9.3, check that the character's DoT casts once from the bar by mouse and keybind with stance restoration enabled, both out of combat and in combat. Record the client build and result separately from the known Defensive stance limitation.
+
+For 1.9.3, the user confirmed that DoT casts from the action bar on Forever with stance restoration enabled, including during combat, using 1.9.3-alpha.2. The Defensive stance switch itself remains a known limitation on build 1.60.1.70862.
+
+## Classic Era reference checklist
 
 Enable Lua errors (`/console scriptErrors 1`). Start with Blizzard bars and a Hunter or Warlock. Record `/pa test ActionButton1`, client build, locale, other addons, and key-down setting when reporting a failure.
 
@@ -34,4 +38,4 @@ Enable Lua errors (`/console scriptErrors 1`). Start with Blizzard bars and a Hu
 
 13. **Keep pet target — experimental, not yet verified in game:** On both supported classes, enable `/pa keeptarget on` out of combat. With the pet attacking living enemy A, change your target to enemy B and cast an eligible spell; confirm the player spell executes normally and PetAssist does not redirect the pet. Repeat while the pet is travelling to A, and record whether the client exposes `pettarget` immediately. Kill A, target B and cast again: confirm the pet attacks B when its old target is dead or absent. Repeat with a friendly, dead and absent player target; no attack or stance change should occur solely because of an invalid target. Use the native pet attack button or an explicit pet macro to redirect the pet manually. Cast Fear/Banish or a supported trap and confirm recall still works; then cast an eligible attack and verify stance restoration and a new attack order. Repeat with stance restoration off and with each available stance (Passive, Defensive, and Assist where supported); note any autonomous target changes caused by the stance. Change the option during combat and verify it takes effect after combat, then check persistence after `/reload`. Repeat in Forever before describing it as verified there. The Lua fixture checks generated commands, not actual game macro condition evaluation or pet AI.
 
-Do not publish a release until the secure execution and original macro/cast checks pass on the target Classic Era client.
+Before a Classic Era release, verify secure execution and original macro/cast behavior on the target Classic Era client.
