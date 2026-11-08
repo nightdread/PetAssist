@@ -876,13 +876,11 @@ local function SpellName(spellId)
   return nil
 end
 
-local function StanceMacro(stance)
-  local condition = "pet,@target,harm,nodead"
-  if Compat and Compat.StanceMacro then
-    return Compat.StanceMacro(stance, condition, header)
+local function StanceCommand(stance)
+  if Compat and Compat.StanceCommand then
+    return Compat.StanceCommand(stance)
   end
-  local command = stance == "passive" and "/petpassive" or "/petdefensive"
-  return command .. " [" .. condition .. "]"
+  return stance == "passive" and "/petpassive" or "/petdefensive"
 end
 
 local function SupportsAssistStance()
@@ -1256,7 +1254,7 @@ local function SyncPetCommand()
   local petCommand = db.keepTarget == true and PET_KEEP_TARGET or PET
   local text = petCommand
   if db.restoreStance then
-    text = StanceMacro(db.stance) .. "\n" .. petCommand
+    text = StanceCommand(db.stance) .. " [pet,@target,harm,nodead]\n" .. petCommand
   end
   header:SetAttribute("pa_assist_text", text)
   header:SetAttribute("pa_recall_text", SOFTCC)

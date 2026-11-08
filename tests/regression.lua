@@ -6,11 +6,6 @@ local frames, bindings, actions, macros, spellNames = {}, {}, {}, {}, {
 }
 local combat, secure, keyDown, page = false, false, true, 1
 local executed, petCommands, messages, timers = {}, {}, {}, {}
-local petActions = {}
-function SecureCmdOptionParse(text)
-  assert(text == "[combat] 1", "unexpected fixture condition")
-  if combat then return "1" end
-end
 local Frame = {}
 Frame.__index = Frame
 function Frame:GetName() return self.name end
@@ -59,16 +54,11 @@ function Frame:CalculateAction()
 end
 function Frame:Click(button, down, mouse)
   local previous = secure
-  if self.scripts.PreClick then
-    secure = false
-    self.scripts.PreClick(self, button, down)
-  end
   secure = true
   local message
   if self.wrapper then
     local newbutton
     newbutton, message = self.wrapper(restricted(self), restricted(self.control), button, down)
-    if newbutton == false then secure = previous; return end
     button = newbutton or button
   end
   local useDown = self:GetEffectiveAttribute("useOnKeyDown", button)
@@ -79,15 +69,10 @@ function Frame:Click(button, down, mouse)
   if down == (not (self.native or mouse) and useDown) then
     if self:GetEffectiveAttribute("type", button) == "action" then
       executed[#executed + 1] = self:CalculateAction()
-    elseif self:GetEffectiveAttribute("type", button) == "pet" then
-      petActions[#petActions + 1] = assert(self:GetEffectiveAttribute("action", button))
     elseif self:GetEffectiveAttribute("type", button) == "macro" then
       local text = self:GetEffectiveAttribute("macrotext", button)
       local prefix, target, mouseButton, phase = text:match("^(.-)\n/click (%S+) (%S+) (%d)$")
       petCommands[#petCommands + 1] = prefix or text
-      if not combat and text:find("^/click %[[^%]]+,nocombat,nopossessbar,novehicleui%] PetAssistDefensiveStance LeftButton 0\n") then
-        PetAssistDefensiveStance:Click("LeftButton", false)
-      end
       -- Re-entering the currently executing macro button is not a reliable
       -- native action dispatch path. Model rejection instead of allowing it.
       if target and target ~= self:GetName() then _G[target]:Click(mouseButton, phase == "1") end
@@ -313,26 +298,24 @@ if FOREVER_ONLY then
       SLASH_PET_DEFENSIVE1, SLASH_PET_DEFENSIVEASSIST1 = nil, nil
       command("keeptarget off"); command("stance assist")
     end)
-    check("Forever resolves the native Defensive slot on each out-of-combat attack", function()
-      local currentSlot = 4
+    check("Forever Defensive leaves the only click for the player spell", function()
       NUM_PET_ACTION_SLOTS = 10
       GetPetActionInfo = function(slot)
-        if slot == currentSlot then return "PET_MODE_DEFENSIVEASSIST", nil, true end
+        if slot == 4 then return "PET_MODE_DEFENSIVEASSIST", nil, true end
       end
       command("stance defensive")
+      local expected = "/petdefensive [pet,@target,harm,nodead]\n/petattack [pet,@target,harm,nodead]"
       click("2")
-      assert(#petActions == 1 and petActions[1] == 4 and #executed == 1)
-      currentSlot = 7
-      click("2")
-      assert(#petActions == 2 and petActions[2] == 7 and #executed == 1)
+      assert(#petCommands == 1 and petCommands[1] == expected)
+      assert(#executed == 1 and executed[1] == 2)
+      assert(not PetAssistDefensiveStance)
+      wipe(executed); wipe(petCommands)
       combat = true
-      click("2")
-      PetAssistDefensiveStance:Click("LeftButton", false)
-      assert(#petActions == 2 and #executed == 1)
+      ActionButton2:Click("LeftButton", true, true)
+      ActionButton2:Click("LeftButton", false, true)
       combat = false
-      currentSlot = nil
-      click("2")
-      assert(#petActions == 2 and petCommands[2] == "/petdefensive" and #executed == 1)
+      assert(#petCommands == 1 and petCommands[1] == expected)
+      assert(#executed == 1 and executed[1] == 2)
       GetPetActionInfo, NUM_PET_ACTION_SLOTS = nil, nil
       command("stance assist")
     end)

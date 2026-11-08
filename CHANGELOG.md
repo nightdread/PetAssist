@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.9.3-alpha.2
+
+- Remove the experimental Defensive button click on Forever to restore action-bar casting.
+- Publish new builds for Forever.
+
 ## 1.9.3-alpha.1
 
 - Add Aggressive to the preferred pet stances on Forever.

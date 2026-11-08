@@ -59,52 +59,6 @@ function C.StanceCommand(stance)
   return "/petdefensive"
 end
 
-local defensiveButton
-
-function C.StanceMacro(stance, condition, header)
-  local command = C.StanceCommand(stance)
-  local normal = command .. " [" .. condition .. "]"
-  if stance ~= "defensive" or command ~= "/petdefensive"
-    or not GetPetActionInfo or not NUM_PET_ACTION_SLOTS or defensiveButton == false then
-    return normal
-  end
-
-  if not defensiveButton then
-    defensiveButton = CreateFrame("Button", "PetAssistDefensiveStance", UIParent, "SecureActionButtonTemplate")
-    defensiveButton:RegisterForClicks("AnyUp")
-    defensiveButton:SetAttribute("useOnKeyDown", false)
-    defensiveButton:SetAttribute("*macrotext*", command)
-    defensiveButton:SetScript("PreClick", function(self)
-      if InCombatLockdown() then return end
-      local slot
-      for i = 1, NUM_PET_ACTION_SLOTS do
-        local name, _, isToken = GetPetActionInfo(i)
-        if isToken and name == "PET_MODE_DEFENSIVEASSIST" then
-          slot = i
-          break
-        end
-      end
-      self:SetAttribute("*action*", slot)
-      self:SetAttribute("*type*", slot and "pet" or "macro")
-    end)
-    defensiveButton:Hide()
-    local ok = pcall(function()
-      header:WrapScript(defensiveButton, "OnClick", [[
-        if SecureCmdOptionParse("[combat] 1") then return false end
-      ]])
-    end)
-    if not ok then
-      defensiveButton = false
-      return normal
-    end
-  end
-
-  -- Resolve the slot on each out-of-combat click. During combat the slot
-  -- cannot be refreshed safely, so keep the legacy slash command instead.
-  return "/click [" .. condition .. ",nocombat,nopossessbar,novehicleui] "
-    .. defensiveButton:GetName() .. " LeftButton 0\n" .. command .. " [" .. condition .. ",combat]"
-end
-
 --- Mainline-style spell name lookup with Classic fallback if globals reappear.
 function C.SpellName(spellId)
   if not spellId then

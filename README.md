@@ -55,7 +55,7 @@ When enabled (default **on**), PetAssist applies the preferred stance before sen
 /cast …
 ```
 
-Choose Defensive (default) or Passive in options, or use `/pa stance defensive|passive`. On Forever, **Assist** (`/pa stance assist`) and **Aggressive** (`/pa stance aggressive`) are also available. When Forever exposes a separate Defensive Assist command, PetAssist uses it for Defensive. Otherwise, PetAssist looks up the native Defensive pet action on each eligible click made outside combat and falls back to the legacy command during combat. The setting applies to eligible actions on the character's action bar while targeting a living enemy. The Forever fallback still requires in-game validation.
+Choose Defensive (default) or Passive in options, or use `/pa stance defensive|passive`. On Forever, **Assist** (`/pa stance assist`) and **Aggressive** (`/pa stance aggressive`) are also available. PetAssist uses the client's Defensive Assist command when available, otherwise it uses `/petdefensive`. That legacy command can fail to change the stance on Forever build 1.60.1.70862. The setting applies to eligible actions on the character's action bar while targeting a living enemy.
 
 Toggle: options checkbox or `/pa stance on|off`.
 

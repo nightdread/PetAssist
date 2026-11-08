@@ -1,5 +1,6 @@
 package-as: PetAssist
 ignore:
+  - AGENTS.md
   - README.md
   - CHANGELOG.md
   - .pkgmeta
