@@ -12,11 +12,15 @@ Install into `_forever_` or `_classic_beta_`. Confirm `/dump select(4, GetBuildI
    - To check the Alpha 1 cast regression, select Defensive in PetAssist and cast Corruption or another DoT from the character's bar, starting out of combat. Repeat by mouse and keybind, and during combat. Confirm the spell applies once even on builds where `/petdefensive` fails to change the stance. If the spell fails, copy the `preparedStanceCommand` field and the affected button details from `/pa report`.
 4. If chat reports secure wrapping unavailable: Recall key still works; bars do not double-wrap after `/reload`.
 5. Settings tabs / rules / Howl-Frost opt-ins without Lua errors.
+   - 1.9.4-alpha: in Advanced, toggle `Show brief action notes above the pet frame` off/on. Cast Fear from the bar: expect a purple "PetAssist: pet recalled" note above the pet frame for ~2.5 s; cast a damage ability: expect a gold "PetAssist: pet sent to attack". Off must suppress the notes without Lua errors; check both mouse and keybind clicks, and in combat.
+   - 1.9.4-alpha: for a character that has never run this version, confirm the three onboarding lines appear once after login; `/pa welcome` repeats them; `/pa welcome reset` makes them appear once again after the next login. Re-log to confirm no repeat by itself.
 6. After installing the build, fully restart the client so it reads the updated TOC metadata. Open the addon menu next to the minimap and select PetAssist; its settings must open. Repeat after `/reload`.
 
 Before a stable Forever release, confirm the scenarios affected by the change on the target build. For 1.9.3, check that the character's DoT casts once from the bar by mouse and keybind with stance restoration enabled, both out of combat and in combat. Record the client build and result separately from the known Defensive stance limitation.
 
 For 1.9.3, the user confirmed that DoT casts from the action bar on Forever with stance restoration enabled, including during combat, using 1.9.3-alpha.2. The Defensive stance switch itself remains a known limitation on build 1.60.1.70862.
+
+      14. **Status notes + onboarding (1.9.4):** Repeat the 1.9.4-alpha Advanced-ticker checks (above, item 5 of the Forever checklist) on the Era client: SoftCC/attack/Recall-key notes by mouse and keybind, in and out of combat, plus once-per-character onboarding with `/pa welcome reset`, and no repeats on later logins.
 
 ## Classic Era reference checklist
 

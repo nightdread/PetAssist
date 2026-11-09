@@ -76,7 +76,7 @@ local TRANSLATIONS = {
     TEST_BAD_BUTTON = "Unknown action button: %s",
     TEST_DETAIL = "%s | slot=%s | type=%s | id=%s | name=%s | policy=%s | prepared=%s | reason=%s | pending=%s | combat=%s",
     TEST_NATIVE = "Native action slot delegate | wrapped=%s | stance=%s | macros=%s",
-    SLASH_HELP = "Commands: on|off|refresh|test [ButtonName]|status|config|mode|softcc|stance|macros|howl|frost|rule|rules|block|unblock|recall",
+    SLASH_HELP = "Commands: on|off|refresh|test [ButtonName]|status|config|mode|softcc|stance|macros|howl|frost|rule|rules|block|unblock|recall|ticker|welcome",
     OPTION_USAGE = "Usage: /pa %s on|off",
     MACRO_USAGE = "Usage: /pa macros auto|attack|recall|ignore",
     STANCE_USAGE = "Usage: /pa stance on|off|passive|defensive%s",
@@ -157,7 +157,7 @@ local TRANSLATIONS = {
     TEST_BAD_BUTTON = "Неизвестная кнопка: %s",
     TEST_DETAIL = "%s | слот=%s | тип=%s | ID=%s | имя=%s | правило=%s | подготовлено=%s | причина=%s | ожидает=%s | бой=%s",
     TEST_NATIVE = "Отдельная кнопка исходного слота | подключена=%s | стойка=%s | макросы=%s",
-    SLASH_HELP = "Команды: on|off|refresh|test [ИмяКнопки]|status|config|mode|softcc|stance|macros|howl|frost|rule|rules|block|unblock|recall",
+    SLASH_HELP = "Команды: on|off|refresh|test [ИмяКнопки]|status|config|mode|softcc|stance|macros|howl|frost|rule|rules|block|unblock|recall|ticker|welcome",
     OPTION_USAGE = "Использование: /pa %s on|off",
     MACRO_USAGE = "Использование: /pa macros auto|attack|recall|ignore",
     STANCE_USAGE = "Использование: /pa stance on|off|passive|defensive%s",
@@ -546,6 +546,15 @@ local UI_TRANSLATIONS = {
     UI_YES = "yes", UI_NO = "no",
     UI_TEST_PENDING = "Changes are pending until combat ends.", UI_TEST_APPLIED = "Current settings have been applied.",
     UI_TEST_NO_ACTION = "PetAssist does not issue a pet command", UI_TEST_ATTACK = "Send pet to attack", UI_TEST_RECALL = "Recall pet",
+    WELCOME_1 = "PetAssist is on: it sends your pet with your offensive abilities and recalls it on Fear, Banish and similar crowd control.",
+    WELCOME_2 = "Assign a Recall key so you can pull the pet back anytime: open settings with /pa config, or use /pa recall SHIFT-F.",
+    WELCOME_3 = "Short notes above the pet frame show when PetAssist acts; disable with /pa ticker off. All commands: /pa",
+    TICKER_ATTACK = "|cffffd100PetAssist: pet sent to attack|r",
+    TICKER_SOFTCC = "|cff9966ffPetAssist: pet recalled (crowd control guard)|r",
+    TICKER_RECALL = "|cff9966ffPetAssist: pet recalled|r",
+    TICKER_USAGE = "Usage: /pa ticker on|off", TICKER_STATUS = "Status notes: %s",
+    UI_TICKER = "Show brief action notes above the pet frame",
+    UI_TICKER_HINT = "Shows \"PetAssist: pet sent to attack\" and \"pet recalled\" when PetAssist acts. Display only; pet commands are unchanged.",
   },
   ruRU = {
     UNWRAP_FAILED = "Не удалось восстановить %s: %s",
@@ -597,6 +606,15 @@ local UI_TRANSLATIONS = {
     UI_YES = "да", UI_NO = "нет",
     UI_TEST_PENDING = "Изменения ожидают окончания боя.", UI_TEST_APPLIED = "Текущие настройки применены.",
     UI_TEST_NO_ACTION = "PetAssist не отправляет команду питомцу", UI_TEST_ATTACK = "Отправить питомца в атаку", UI_TEST_RECALL = "Отозвать питомца",
+    WELCOME_1 = "PetAssist активен: отправляет питомца вместе с атакующими способностями и отзывает его при Страхе, Изгнании и подобном контроле.",
+    WELCOME_2 = "Назначьте клавишу отзыва — так можно вернуть питомца в любой момент: настройки /pa config или /pa recall SHIFT-F.",
+    WELCOME_3 = "Короткие пометки над фреймом питомца показывают, когда срабатывает PetAssist; отключить: /pa ticker off. Все команды: /pa",
+    TICKER_ATTACK = "|cffffd100PetAssist: питомец отправлен в атаку|r",
+    TICKER_SOFTCC = "|cff9966ffPetAssist: питомец отозван (защита контроля)|r",
+    TICKER_RECALL = "|cff9966ffPetAssist: питомец отозван|r",
+    TICKER_USAGE = "Использование: /pa ticker on|off", TICKER_STATUS = "Пометки действий: %s",
+    UI_TICKER = "Показывать короткие пометки над фреймом питомца",
+    UI_TICKER_HINT = "Показывает «PetAssist: питомец отправлен в атаку» и «питомец отозван», когда срабатывает PetAssist. Только отображение; команды питомцу не меняются.",
   },
 }
 for language, values in pairs(UI_TRANSLATIONS) do
@@ -619,6 +637,8 @@ local defaults = {
   softCCFrostTrap = false,-- include Frost Trap in SoftCC (opt-in)
   blacklist = {},         -- [lowerSpellName] = true (custom mode)
   recallKey = nil,        -- e.g. "SHIFT-F"
+  statusTicker = true,    -- brief action notes above the pet frame (display only)
+  welcomeShown = false,   -- onboarding message shown once per character
 }
 
 -- Classic Era: CC / utility that should not send the pet (localized via GetSpellInfo).
@@ -1073,6 +1093,54 @@ local function SlotFromButton(btn)
   return btn:GetAttribute("action") or btn.action
 end
 
+-- ---------------------------------------------------------------------------
+-- Status ticker (display only; mirrors PetAssist dispatch decisions)
+-- ---------------------------------------------------------------------------
+local statusFrame, statusTextField, statusTimer, recallStatusHooked
+local function EnsureStatusTicker()
+  if statusFrame ~= nil then return statusFrame ~= false end
+  statusFrame = false
+  local ok, frame = pcall(CreateFrame, "Frame", "PetAssistStatus", UIParent)
+  if not ok or not frame then return false end
+  frame:SetSize(340, 18)
+  frame:SetFrameStrata("MEDIUM")
+  local petFrame = _G.PetFrame
+  if petFrame then
+    frame:SetPoint("BOTTOM", petFrame, "TOP", 0, 4)
+  else
+    frame:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, 150)
+  end
+  local okText, text = pcall(function()
+    return frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+  end)
+  if not okText or not text then return false end
+  text:SetPoint("CENTER", frame, "CENTER", 0, 0)
+  frame:Hide()
+  frame.text = text
+  statusFrame, statusTextField = frame, text
+  return true
+end
+
+-- Called from post-click observation hooks only. Pure display: it never changes
+-- protected state. Silences itself when the setting, class or addon says so.
+local function StatusNotify(message)
+  if not message then return end
+  if not DB().enabled or DB().statusTicker == false or not isHunterOrWarlock then return end
+  if not EnsureStatusTicker() then return end
+  statusTextField:SetText(message)
+  statusFrame:Show()
+  if statusTimer then
+    statusTimer:Cancel()
+    statusTimer = nil
+  end
+  if C_Timer and C_Timer.NewTimer then
+    statusTimer = C_Timer.NewTimer(2.5, function()
+      statusTimer = nil
+      if statusFrame then statusFrame:Hide() end
+    end)
+  end
+end
+
 -- Diagnostics are read-only observers. No protected calls or frame attributes
 -- are changed by recording or generating reports, including during combat.
 local DEBUG_LIMIT = 100
@@ -1118,6 +1186,16 @@ local function ObserveButton(btn, delegate)
     -- session-only and does not write to protected frames or enable logging.
     if not delegate and wrapped[self] and DB().enabled then
       lastActionButton = self:GetName()
+    end
+    if delegate then
+      -- The delegate click is the moment PetAssist actually dispatches.
+      local slot = SlotFromButton(self)
+      local policy = slot and header:GetAttribute("pa_slot_" .. slot)
+      if policy == PA_ASSIST then
+        StatusNotify(L.TICKER_ATTACK)
+      elseif policy == PA_SOFTCC then
+        StatusNotify(L.TICKER_SOFTCC)
+      end
     end
     if not DB().debug then return end
     local slot = SlotFromButton(self)
@@ -1354,6 +1432,10 @@ local function ApplyRecallBinding()
   if InCombatLockdown() then
     return
   end
+  if not recallStatusHooked then
+    recallStatusHooked = true
+    recallBtn:HookScript("PostClick", function() StatusNotify(L.TICKER_RECALL) end)
+  end
   local key = DB().recallKey
   if key and key ~= "" then
     SetOverrideBindingClick(binder, true, key, "PetAssistRecall", "LeftButton")
@@ -1488,6 +1570,14 @@ end
 -- Options UI (Esc → Options → AddOns → PetAssist)
 -- ---------------------------------------------------------------------------
 
+local function ShowWelcome()
+  -- One-time onboarding for new players; /pa welcome repeats it on request.
+  if not isHunterOrWarlock then return end
+  Print(L.WELCOME_1)
+  Print(L.WELCOME_2)
+  Print(L.WELCOME_3)
+end
+
 local function ModeLabel(mode)
   if mode == MODE_ALL then
     return L.MODE_ALL_DESC
@@ -1547,6 +1637,7 @@ RefreshOptionsUI = function()
   f.generalStatus:SetText(pendingRefresh and L.UI_STATUS_PENDING or L.UI_AUTOSAVE)
   f.howlCheck:SetChecked(db.softCCHowl)
   f.frostCheck:SetChecked(db.softCCFrostTrap)
+  if f.tickerCheck then f.tickerCheck:SetChecked(db.statusTicker ~= false) end
   for _, group in ipairs(f.choiceGroups) do
     for value, check in pairs(group.buttons) do
       local selected = value == group.get()
@@ -1676,7 +1767,7 @@ local function CreateOptions()
   end
   local extraStanceRows = SupportsAssistStance() and 72 or 0
   local general = Page("general", 878 + extraStanceRows)
-  local advanced = Page("advanced", 540)
+  local advanced = Page("advanced", 596)
   local rules = Page("rules", 650)
   local diagnostics = Page("diagnostics", 790)
   Panel(general, 0, 210)
@@ -1684,7 +1775,7 @@ local function CreateOptions()
   Panel(general, 474, 160)
   Panel(general, 644, 213 + extraStanceRows)
   Panel(advanced, 0, 210)
-  Panel(advanced, 216, 300)
+  Panel(advanced, 216, 360)
   local function CancelCapture()
     if f.recallCapture then
       f.recallCapture:Hide()
@@ -1802,6 +1893,11 @@ local function CreateOptions()
     {"recall", L.UI_RECALL_ACTION}, {"ignore", L.UI_IGNORE},
   }, function() return DB().macroPolicy end, function(value) DB().macroPolicy = value; Changed() end)
   Text(advanced, L.UI_MACRO_HINT, 446)
+  f.tickerCheck = Check(advanced, L.UI_TICKER, 478, function(self)
+    DB().statusTicker = self:GetChecked() and true or false
+    RefreshOptionsUI()
+  end)
+  Text(advanced, L.UI_TICKER_HINT, 508)
   f.statusText = Text(diagnostics, "", 8, true)
   f.refreshButton = Button(diagnostics, L.UI_REFRESH_BUTTON, 4, 62, 220, function()
     Refresh(false); RefreshOptionsUI()
@@ -2063,7 +2159,12 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
       return
     end
     
-    if DB().enabled then
+    local dbEnter = DB()
+    if dbEnter.welcomeShown ~= true then
+      dbEnter.welcomeShown = true
+      C_Timer.After(3.0, ShowWelcome)
+    end
+    if dbEnter.enabled then
       C_Timer.After(0.75, function()
         -- Only print on first login
         Refresh(not firstLogin)
@@ -2256,6 +2357,21 @@ SlashCmdList.PETASSIST = function(msg)
     db.blacklist[rest:lower()] = nil
     Refresh(true)
     Print(string.format(L.UNBLOCKED, rest))
+  elseif cmd == "ticker" or cmd == "пометки" or cmd == "индикатор" then
+    local value = rest:lower()
+    if value ~= "on" and value ~= "off" then
+      Print(L.TICKER_USAGE)
+      return
+    end
+    db.statusTicker = value == "on"
+    Print(string.format(L.TICKER_STATUS, value))
+  elseif cmd == "welcome" or cmd == "приветствие" then
+    if rest:lower() == "reset" or rest:lower() == "сброс" then
+      db.welcomeShown = false
+      Print(L.WELCOME_1)
+      return
+    end
+    ShowWelcome()
   elseif cmd == "recall" or cmd == "отзыв" then
     if rest == "" or rest:lower() == "clear" or rest:lower() == "сброс" then
       db.recallKey = nil

@@ -29,6 +29,19 @@ On Forever, Defensive often auto-engages more like Assist; SoftCC and Recall rem
 - The pet receives `/petattack` together with your cast (when the mode allows it)
 - Default mode **harm**: pet is sent on damage/DoTs; Fear / Banish pull the pet back (**SoftCC Guard**)
 
+### Status notes (ticker)
+
+PetAssist can show a one-line note above the pet frame for ~2.5 seconds when it acts:
+
+- **Pet sent to attack** — the addon dispatched `/petattack` together with your cast.
+- **Pet recalled** — SoftCC Guard fired (Fear, Banish, traps…), or your Recall key was pressed.
+
+The notes only reflect dispatch decisions; they do not change pet command behavior and do not touch protected actions. Toggle in **Advanced** settings or `/pa ticker on|off`.
+
+### Onboarding
+
+On first login for a Hunter or Warlock, PetAssist prints three short setup lines: what it does, how to assign the Recall key, and about the ticker. `/pa welcome` shows them again; `/pa welcome reset` re-enables the once-per-character prompt.
+
 ### SoftCC Guard
 
 On Fear, Banish, Death Coil, Enslave Demon, Scare Beast, Freezing Trap, Wyvern Sting, Scatter Shot the addon runs:
@@ -79,6 +92,8 @@ Toggle: options checkbox or `/pa stance on|off`.
 | `/pa unblock SpellName` | remove from custom blacklist |
 | `/pa recall SHIFT-F` | bind Recall (`/petpassive` + `/petfollow`) |
 | `/pa recall clear` | clear Recall bind |
+| `/pa ticker on\|off` | brief action notes above the pet frame (default on) |
+| `/pa welcome [reset]` | show the onboarding message; reset re-enables the first-login prompt |
 | `/pa test [ButtonName]` | Inspect an action button (default: ActionButton1): slot, spell ID, chosen/prepared policy and reason |
 | `/pa status` | on/off + mode + stance restore |
 
@@ -164,7 +179,7 @@ Bind a key (options UI or `/pa recall KEY`) to pull the pet back: Passive + Foll
 
 ## Localization
 
-Existing strings support all Classic Era client languages. New 1.6 controls and diagnostics are translated into English and Russian; other locales fall back to English for these additions:
+Existing strings support all Classic Era client languages. Newer additions (1.6 controls and diagnostics, 1.9.4 status ticker and onboarding) are translated into English and Russian; other locales fall back to English for those strings:
 - English (enUS)
 - German (deDE)
 - French (frFR)

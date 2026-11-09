@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.9.4-alpha.1
+
+- Add a status ticker above the pet frame: short notes when PetAssist sends the pet to attack, recalls it via SoftCC Guard, or the Recall key fires. Display only; adds no commands and does not touch protected actions.
+- Add one-time onboarding for new Hunter/Warlock characters: three setup lines (what the addon does, assigning a Recall key, the ticker) shown on first login. `/pa welcome` repeats the message, `/pa welcome reset` re-enables the first-run prompt.
+- New commands: `/pa ticker on|off` and `/pa welcome [reset]`; new checkbox `Show brief action notes above the pet frame` in Advanced settings (English and Russian).
+- Automated Lua 5.1 regressions updated and passing (ticker mirror of SoftCC/attack dispatch, ticker off behavior, once-per-character onboarding, Forever path). In-client verification on Forever is still pending; this alpha invites in-game feedback.
+
 ## 1.9.3
 
 - Add Aggressive to the preferred pet stances on WoW Forever.
