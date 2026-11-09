@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.9.4
+
+- Stable release of the 1.9.4 feature set after in-game confirmation on WoW Forever (see the alpha entries below for details).
+- User-confirmed on Forever: the graphic Recall key capture records mac Command combinations (`META-R`), Command alone waits for the real key, status notes above the pet frame work, and the once-per-character onboarding goes through without errors.
+- The release workflow now uploads the Classic package alongside the Forever package again, matching the documented release process.
+
 ## 1.9.4-alpha.2
 
 - Fix the graphical Recall key capture on macOS: the Command (Meta) modifier is now detected and recorded together with the key (Command+R → `META-R`), and pressing Command alone no longer records a bare-modifier binding. Composed binding names delivered by the client (e.g. `META-S`) are kept unchanged.

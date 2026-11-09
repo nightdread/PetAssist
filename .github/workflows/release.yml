@@ -50,3 +50,24 @@ jobs:
         uses: BigWigsMods/packager@v2
         with:
           args: -c -o -g forever -r ./.release/forever
+
+      - name: Package Classic without uploading
+        uses: BigWigsMods/packager@v2
+        with:
+          args: -d -g classic -r ./.release/classic
+
+      - name: Validate Classic package
+        shell: bash
+        run: |
+          shopt -s nullglob
+          classic=(.release/classic/*-classic.zip)
+          if (( ${#classic[@]} != 1 )); then
+            echo "Expected one Classic archive"
+            exit 1
+          fi
+          python tests/run.py --archive "${classic[0]}"
+
+      - name: Upload validated Classic package contents
+        uses: BigWigsMods/packager@v2
+        with:
+          args: -c -o -g classic -r ./.release/classic
