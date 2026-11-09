@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.9.4-alpha.2
+
+- Fix the graphical Recall key capture on macOS: the Command (Meta) modifier is now detected and recorded together with the key (Command+R → `META-R`), and pressing Command alone no longer records a bare-modifier binding. Composed binding names delivered by the client (e.g. `META-S`) are kept unchanged.
+- Clarified the capture prompt in English and Russian: Escape cancels; on macOS Command = Meta.
+- Added a regression check for Meta capture; documented the chat fallback `/pa recall META-R`.
+
 ## 1.9.4-alpha.1
 
 - Add a status ticker above the pet frame: short notes when PetAssist sends the pet to attack, recalls it via SoftCC Guard, or the Recall key fires. Display only; adds no commands and does not touch protected actions.

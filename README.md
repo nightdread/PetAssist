@@ -160,6 +160,8 @@ Clicks are dispatch attempts; player spell start/success/failure events are reco
 
 Bind a key (options UI or `/pa recall KEY`) to pull the pet back: Passive + Follow. Useful before CC or when the pet over-aggros. PetAssist reports the underlying binding it will override. Clearing Recall restores that binding after refresh (after combat if necessary).
 
+On macOS the Command key is recorded as `META`: choose Command+R in the key capture, or run `/pa recall META-R`.
+
 ## Compatibility
 
 - Default Blizzard bars (keybinds + mouse)

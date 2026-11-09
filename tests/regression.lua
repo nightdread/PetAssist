@@ -831,6 +831,28 @@ check("closing options stops Recall key capture", function()
   f:Hide()
   assert(not f.recallCapture.shown and not f.recallCapture.keyboard)
 end)
+check("mac Meta (Command) capture records META + key, not bare modifiers", function()
+  command("recall clear") -- start unbound; SHIFT-F was assigned earlier in the suite
+  local f=PetAssistOptionsPanel
+  f:Show()
+  f.bindButton.scripts.OnClick(f.bindButton)
+  local capture=f.recallCapture
+  assert(capture.shown)
+  IsShiftKeyDown=function() return false end
+  IsControlKeyDown=function() return false end
+  IsAltKeyDown=function() return false end
+  capture.scripts.OnKeyDown(capture, "LMETA") -- Command alone must wait for the real key
+  assert(PetAssistDB.recallKey == nil)
+  IsMetaKeyDown=function() return true end
+  capture.scripts.OnKeyDown(capture, "R")
+  assert(PetAssistDB.recallKey == "META-R")
+  f.bindButton.scripts.OnClick(f.bindButton) -- composed names from the client pass through
+  capture.scripts.OnKeyDown(capture, "META-S")
+  assert(PetAssistDB.recallKey == "META-S")
+  IsShiftKeyDown, IsControlKeyDown, IsAltKeyDown, IsMetaKeyDown = nil, nil, nil, nil
+  f:Hide()
+  PetAssistDB.recallKey = nil
+end)
 check("disabling in combat is deferred then restores native bindings", function()
   combat=true; command("off"); assert(bindings["1"])
   combat=false; event("PLAYER_REGEN_ENABLED")

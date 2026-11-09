@@ -96,7 +96,7 @@ local TRANSLATIONS = {
     RECALL_UNBOUND = "not bound",
     CUSTOM_BLACKLIST = "Custom blacklist: %d names (custom mode only)",
     BIND_RECALL = "Bind Recall",
-    PRESS_KEY = "Press a key…",
+    PRESS_KEY = "Press a key… (Esc cancels, mac Command = Meta)",
     CLEAR = "Clear",
     RECALL_CLEARED = "Recall bind cleared.",
     REFRESH = "Refresh",
@@ -177,7 +177,7 @@ local TRANSLATIONS = {
     RECALL_UNBOUND = "не назначен",
     CUSTOM_BLACKLIST = "Custom blacklist: %d имён (только для режима custom)",
     BIND_RECALL = "Назначить Recall",
-    PRESS_KEY = "Нажми клавишу…",
+    PRESS_KEY = "Нажмите клавишу… (Esc — отмена; mac Command = Meta)",
     CLEAR = "Сброс",
     RECALL_CLEARED = "Recall бинд сброшен.",
     SUBTITLE = "Питомец атакует цель вместе с твоим кастом (Warlock / Hunter)",
@@ -1849,16 +1849,29 @@ local function CreateOptions()
         binderFrame:Hide()
         return
       end
+      -- Modifier-only presses (including the mac Command/Meta key) wait for
+      -- the actual key before recording anything.
       if key == "UNKNOWN" or key == "LSHIFT" or key == "RSHIFT"
-        or key == "LCTRL" or key == "RCTRL" or key == "LALT" or key == "RALT" then
+        or key == "LCTRL" or key == "RCTRL" or key == "LALT" or key == "RALT"
+        or key == "LMETA" or key == "RMETA" or key == "COMMAND" then
         return
       end
-      local parts = {}
-      if IsShiftKeyDown() then parts[#parts + 1] = "SHIFT" end
-      if IsControlKeyDown() then parts[#parts + 1] = "CTRL" end
-      if IsAltKeyDown() then parts[#parts + 1] = "ALT" end
-      parts[#parts + 1] = key
-      local binding = table.concat(parts, "-")
+      -- Blizzard clients may already deliver the composed binding name
+      -- (for example "META-R" on mac); keep it as-is.
+      local composed = key:match("^(SHIFT%-.-)$") or key:match("^(CTRL%-.-)$")
+        or key:match("^(ALT%-.-)$") or key:match("^(META%-.-)$")
+      local binding
+      if composed then
+        binding = composed
+      else
+        local parts = {}
+        if IsShiftKeyDown() then parts[#parts + 1] = "SHIFT" end
+        if IsControlKeyDown() then parts[#parts + 1] = "CTRL" end
+        if IsAltKeyDown() then parts[#parts + 1] = "ALT" end
+        if IsMetaKeyDown and IsMetaKeyDown() then parts[#parts + 1] = "META" end -- mac Command
+        parts[#parts + 1] = key
+        binding = table.concat(parts, "-")
+      end
       ReportRecallConflict(binding)
       DB().recallKey = binding
       Refresh(true)
