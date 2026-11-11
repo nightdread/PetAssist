@@ -2,241 +2,116 @@
 
 ## 1.9.4
 
-- Stable release of the 1.9.4 feature set after in-game confirmation on WoW Forever (see the alpha entries below for details).
-- User-confirmed on Forever: the graphic Recall key capture records mac Command combinations (`META-R`), Command alone waits for the real key, status notes above the pet frame work, and the once-per-character onboarding goes through without errors.
-- The release workflow now uploads the Classic package alongside the Forever package again, matching the documented release process.
+### New
 
-## 1.9.4-alpha.2
+- **Pet status notes:** See a brief message above the pet frame when PetAssist sends an attack or recall command. You can turn these messages off in Advanced settings.
+- **Getting started:** New Hunters and Warlocks receive a short introduction to PetAssist and its Recall key.
 
-- Fix the graphical Recall key capture on macOS: the Command (Meta) modifier is now detected and recorded together with the key (Command+R → `META-R`), and pressing Command alone no longer records a bare-modifier binding. Composed binding names delivered by the client (e.g. `META-S`) are kept unchanged.
-- Clarified the capture prompt in English and Russian: Escape cancels; on macOS Command = Meta.
-- Added a regression check for Meta capture; documented the chat fallback `/pa recall META-R`.
+### Fixed
 
-## 1.9.4-alpha.1
-
-- Add a status ticker above the pet frame: short notes when PetAssist sends the pet to attack, recalls it via SoftCC Guard, or the Recall key fires. Display only; adds no commands and does not touch protected actions.
-- Add one-time onboarding for new Hunter/Warlock characters: three setup lines (what the addon does, assigning a Recall key, the ticker) shown on first login. `/pa welcome` repeats the message, `/pa welcome reset` re-enables the first-run prompt.
-- New commands: `/pa ticker on|off` and `/pa welcome [reset]`; new checkbox `Show brief action notes above the pet frame` in Advanced settings (English and Russian).
-- Automated Lua 5.1 regressions updated and passing (ticker mirror of SoftCC/attack dispatch, ticker off behavior, once-per-character onboarding, Forever path). In-client verification on Forever is still pending; this alpha invites in-game feedback.
+- **Recall on macOS:** Command key combinations can now be assigned correctly in the settings.
 
 ## 1.9.3
 
-- Add Aggressive to the preferred pet stances on WoW Forever.
-- Keep the character's spell cast on the original action-bar path when applying the preferred stance.
-- Use the client's Defensive Assist command where available. The legacy `/petdefensive` command can fail to switch stance on build 1.60.1.70862.
-- Publish the WoW Forever package.
-
-## 1.9.3-alpha.2
-
-- Remove the experimental Defensive button click on Forever to restore action-bar casting.
-- Publish new builds for Forever.
-
-## 1.9.3-alpha.1
-
-- Add Aggressive to the preferred pet stances on Forever.
-- Prefer the client's Defensive Assist command for the Defensive stance on Forever when the client exposes it.
-- On Forever builds without that command, try the native Defensive pet action on eligible clicks made outside combat.
-- Clarify that the preferred stance is applied by eligible player action-bar actions; in-game verification is still needed.
+- Added the Aggressive preferred stance for WoW Forever.
+- Improved Defensive stance handling on supported Forever clients.
+- Fixed an issue that could prevent action-bar abilities from casting when applying the preferred stance on Forever.
 
 ## 1.9.2
 
-- Add a PetAssist entry to the minimap addon menu for opening settings; Forever in-game validation is pending.
+- Added PetAssist to the minimap addon menu for easier access to settings.
 
 ## 1.9.1
 
-- Refresh the settings layout with grouped sections, highlighted choices and a clearer pet-target control.
-- Add a diagnostics shortcut to inspect the last connected action-bar button without enabling recording.
-- Fix duplicate version prefixes in release startup and status messages.
-- Pass automated Lua 5.1 regressions; the updated interface and real-client protected behavior still require in-game validation.
+- Made settings easier to navigate with grouped sections and clearer choices.
+- Added a shortcut to inspect the last connected action-bar button.
+- Fixed duplicate version numbers in startup and status messages.
 
 ## 1.9.0
 
-- Organize settings into General, Advanced, Rules and Diagnostics, with clearer descriptions and combat status.
-- Add graphical action-bar refresh, button inspection, and per-button diagnostic reports; existing chat commands remain available.
-- Verify graphical actions and deferred combat updates in automated tests. In-game layout and protected behavior still require validation.
+- Reorganized settings into General, Advanced, Rules and Diagnostics.
+- Added graphical controls for refreshing action bars, inspecting buttons and creating diagnostic reports.
+- Made it clearer when changes are waiting for combat to end.
 
 ## 1.8.0
 
-- Add an experimental, opt-in keep-target setting: suppress PetAssist attack orders while the pet has a living target. Other commands and pet stance can still change the target; in-game validation is required.
-- Explain that PetAssist reacts to the input and cannot guarantee a successful cast before issuing a pet order.
-- Build separate Classic and Forever archives with the correct game versions and filenames; use the Camelot TOC for Forever.
-- Automated Lua regression and package checks pass; keep-target and Forever behavior still require in-game validation.
+- Added the experimental **Keep Target** option, which avoids sending a new PetAssist attack command while your pet has a living target. Pet stances and other commands may still change its target.
+- Added separate downloads for Classic Era and WoW Forever.
 
 ## 1.7.1
 
-### Clarity and troubleshooting
-- Clarify that all mode is subject to SoftCC and explicit rules, including in localized descriptions.
-- Explain common reasons a pet may not attack, including complex macros, target selection, and changes deferred until after combat.
-- Add practical troubleshooting guidance in the settings panel.
-
-### Validation
-- Automated Lua 5.1 regression and initialization checks; real-client validation remains necessary.
-- Forever remains experimental pending in-game testing.
+- Clarified how attack modes, custom rules and crowd-control protection interact.
+- Added troubleshooting tips to the settings and documentation.
 
 ## 1.7.0
 
-### Forever (experimental)
-- Ship one CurseForge package for Classic Era and Forever: `PetAssist.toc` (`11509`) and `PetAssist_Forever.toc` (`16001`).
-- Add `Forever/Compat.lua`: client detect, `C_Spell` name lookup, Assist stance (`/petassist`), and a secure-snippet probe.
-- If OnClick wrapping is unavailable on a Forever build, disable bar SoftCC/assist wrapping, keep the Recall key, and print a clear message.
-- SoftCC, rules, and Recall remain the primary Forever value; `/petattack` assist stays available (e.g. Passive stance).
-
-### Validation
-- Automated suite: Era regressions plus Forever load path (Compat + `C_Spell`) and snippet-failure fallback (80 Lua 5.1 checks total with locale/class init).
-- Forever in-game smoke is **not** claimed yet; treat Forever as experimental until the Forever checklist in `tests/IN_GAME.md` passes.
+- Added experimental support for WoW Forever, including the Assist pet stance.
+- Kept the Recall key available if action-bar assistance is unavailable on a Forever client.
 
 ## 1.6.2
 
-### Fixes
-- Fix damage abilities sending the pet to attack without casting the player's spell. Execute the original action slot through a separate secure button instead of clicking the same button recursively.
-- Resolve the current action slot at click time, preserve native spell ranks and macro bodies, and forward targeting attributes.
-- Leave native clicks untouched if the secure delegate is unavailable and report failures to remove click wrappers.
-
-### Diagnostics
-- Add opt-in recording with `/pa debug on|off|clear` and a copyable `/pa report [ButtonName]` window, also available in Advanced settings.
-- Include client/build, locale/class, settings, bar addons, action-slot decisions, click attempts, player spell outcomes, game error IDs and blocked/forbidden addon actions.
-- Keep the last 100 events across reloads in a separate per-character diagnostic store. Reports are shared manually; character names, chat, macro bodies/names and custom rule names are not recorded.
-- Observe clicks through read-only hooks. Debug controls and reports do not change protected action attributes in combat. Attach Lua errors separately from the game's error viewer.
-
-### Validation
-- Pass 74 automated Lua 5.1 regression, initialization, settings migration and diagnostic persistence checks, including checks against the packaged addon.
-- Confirmed in Classic Era 1.15.9 (build 70003), enUS Warlock with Blizzard bars: Shadow Bolt, Corruption and Curse of Agony cast successfully, and the pet attacks.
-- Broader Hunter, macro and third-party bar scenarios remain covered by the in-game checklist rather than this limited client confirmation.
+- Fixed an issue where a pet could attack while the player's ability failed to cast.
+- Added optional diagnostic recording and a copyable report to help troubleshoot problems.
 
 ## 1.6.1
 
-- Fix blocked casts on Blizzard action bars with ActionButtonUseKeyDown enabled: forward the nested native click on release, matching Blizzard's secure mouse dispatch.
-- Correct the regression fixture to model Blizzard OnClick separately from direct secure key input; reproduce the 1.6.0 failure before applying the fix.
-
-- Reorganize settings into General, Advanced and Rules tabs with scrollable pages.
-- Use descriptive English/Russian labels and explicit selections instead of cycling through command values.
-- Show saved rules for editing and add custom exclusion management without chat commands.
-- Show inline save feedback and explain automatic saving and deferred combat changes.
-- Cancel Recall key capture when switching tabs.
+- Fixed blocked casts when the action-bar key-down option was enabled.
+- Improved the settings layout, rule editor and Recall key assignment.
 
 ## 1.6.0
 
-### Fixes
-- Execute original action buttons instead of rebuilding spell casts and copying macro bodies. This preserves downranks, native targeting, auto-attack behavior, and long macros.
-- Read current secure action/page attributes at click time and precompute policies for all 120 slots, avoiding stale spell proxies after paging in combat.
-- Remove invalid restricted-frame `Click()` calls; route pet commands through a secure OnClick macro and `/click` back to the original button with a recursion guard.
-- Use one preferred-stance command for mouse and keyboard, including modifier binds.
-- Reconcile key-down CVar changes made during combat after combat.
-- Store new blacklist entries once; reuse/cancel Recall key capture when closing options.
-
-### Features
-- Preferred pet stance: Defensive or Passive.
-- Explicit spell/macro rules: attack, recall, ignore, clear; editor in options and `/pa rule` / `/pa rules`.
-- Conservative macro auto mode: recognize simple unconditional casts; leave complex macros unchanged unless opted in. Explicit `/pet...` commands always retain ownership.
-- Macro default policy: `/pa macros auto|attack|recall|ignore`.
-- Howl of Terror and Frost Trap opt-in checkboxes and `/pa howl` / `/pa frost`.
-- Recall binding conflict notification.
-- `/pa test ButtonName`: current slot, ID, decision/reason, prepared policy, and pending-combat refresh.
-
-### Validation
-- Lua 5.1 regression suite and class/locale initialization checks; GitHub Actions runs the suite on pushes and pull requests.
-- Real-client secure execution, macro chaining, action-bar integrations and UI layout require the in-game checklist before release.
-- New UI strings include English/Russian translations and English fallback for other locales.
-
+- Improved support for spell ranks, action-bar pages and existing macros.
+- Added preferred pet stances and custom rules for spells and macros.
+- Added options for Howl of Terror and Frost Trap, plus Recall key conflict notifications.
 
 ## 1.5.1
 
-### Localization
-- **Full Classic Era locale support:** Added translations for deDE (German), frFR (French), esES (Spanish - Spain), esMX (Spanish - Mexico), ptBR (Portuguese - Brazil), itIT (Italian), koKR (Korean), zhCN (Simplified Chinese), zhTW (Traditional Chinese)
-- **Fallback system:** All locales fall back to English (enUS) for any missing strings
-- **Structured for CurseForge:** Localization tables organized for future integration with CurseForge localization system
-- **Note:** Asian locales (koKR, zhCN, zhTW) are draft translations; game terminology may need verification by native speakers
-
-### Auto-Attack Detection
-- **Locale-independent:** Fixed auto-attack detection to use spell ID 6603 instead of hardcoded string comparisons ("attack", "атака", etc.)
-- **Classic Era compatible:** Uses spell ID check first, fallback to global ATTACK string for reliability
-- **Eliminates bugs:** Now works correctly on all client languages without special-casing locale strings
+- Added more client-language translations, with English fallback for missing text.
+- Improved auto-attack detection across languages.
 
 ## 1.5.0
 
-### Features
-- **Rank-correct casts:** Downranked spells on the action bar now cast the exact rank placed on the bar, not max rank
-- **Restore pet stance after SoftCC:** New option (default ON) to restore pet stance (e.g. `/petdefensive`) before `/petattack` on normal spells after using SoftCC abilities
-- **Class gate:** Addon now only activates for Hunter and Warlock; shows a single quiet message on other classes
-- **Localization:** All user-facing strings now support English (default) and Russian (ruRU) via locale table
-
-### Spell List Improvements
-- **Added missing Hunter spells to block list:**
-  - All Aspects (Hawk, Cheetah, Pack, Wild)
-  - All Tracking abilities
-  - Trueshot Aura, Rapid Fire, Deterrence, Disengage
-  - Demon summons for Warlock
-  - All Detect Invisibility ranks
-- **SoftCC changes:**
-  - Removed Seduction (pet's own spell; `/petfollow` interrupts it)
-  - Howl of Terror and Frost Trap now opt-in via settings (not default)
-
-### Performance & UX
-- **Event debouncing:** `ACTIONBAR_SLOT_CHANGED` and similar events now debounced into one refresh (100ms delay)
-- **UPDATE_MACROS registered:** Edited macros now automatically picked up
-- **Reduced print noise:** Only prints on first login or explicit `/pa refresh`, not every world enter
-- **Skip unnecessary post-combat refresh:** Only refreshes when `pendingRefresh` flag is set
-
-### Commands
-- New: `/pa stance on|off` — toggle stance restoration
-- Updated: `/pa test` now shows stance restore status
-- Updated: `/pa status` includes stance restore state
+- Added support for the exact spell rank placed on the action bar.
+- Added preferred stance restoration and English and Russian interface text.
+- Improved spell exclusions for Hunters and Warlocks.
 
 ## 1.4.0
 
-- **SoftCC Guard:** Fear / Banish / Howl / Death Coil / Enslave / traps / Scare Beast → `/petpassive` + `/petfollow` with the cast (pet stops breaking CC)
-- Toggle: options checkbox or `/pa softcc on|off` (default on)
-- SoftCC overrides assist even in `all` mode
+- Added SoftCC Guard to recall the pet when using supported crowd-control abilities.
 
 ## 1.3.2
 
-- Fixed: DoTs (Corruption, curses, Immolate) no longer skipped in `harm` mode
-- `harm` now = everything except built-in CC/utility list (no broken `IsHarmfulSpell`)
-- Clearer mode descriptions in options
+- Fixed pet attacks with damage-over-time spells and improved mode descriptions.
 
 ## 1.3.1
 
-- Options registered in Esc → Options → AddOns → **PetAssist**
-- `/pa config` opens that panel
+- Added PetAssist to the game's addon settings.
 
 ## 1.3.0
 
-- **Modes:** `harm` (default), `all`, `custom` — control when the pet is sent
-- **Built-in block list** for CC/utility (Fear, Banish, Death Coil, traps, create stones, Life Tap, etc.)
-- **Dominos / Bartender4 / ElvUI** action button support via PreClick
-- **Recall** bind: `/petpassive` + `/petfollow` (`/pa recall` or options UI)
-- **Options window:** `/pa config`
-- Smarter `/petattack [pet,@target,harm,nodead]` (skip if no pet / bad target)
-- Items skipped in `harm` mode (no pet on Healthstone/trinket presses)
-- Slash: `mode`, `block`, `unblock`, `recall`, `config`
+- Added attack modes, spell exclusions and a configurable Recall key.
+- Added support for action buttons from Dominos, Bartender4 and ElvUI.
 
 ## 1.2.3
 
-- Fixed "You are too far away" spam: `/startattack` only on the Attack button, not on every spell
+- Fixed unnecessary out-of-range messages when casting spells.
 
 ## 1.2.2
 
-- Restored pet attack via secure `/petattack` macros on keybinds
-- Keep auto-attack: use `/startattack` instead of `/cast Attack`, no key-up double-fire
-- Empty action slots are no longer overridden
+- Restored pet attacks from action-bar keybinds and improved auto-attack behavior.
 
 ## 1.2.1
 
-- Fixed auto-attack: proxies now use `type=action` instead of `/cast` macros
-- Removed `typerelease` double-fire that toggled Attack off on key-up
-- Pet attack runs once per keypress (respects ActionButtonUseKeyDown)
+- Fixed auto-attack behavior and duplicate pet commands on key release.
 
 ## 1.2.0
 
-- Secure action-bar proxies with `/petattack` + spell/item/macro
-- Keybind overrides via `SetOverrideBindingClick`
-- PreClick wrap for mouse clicks on action buttons
-- `/petassist test` and `refresh`
+- Improved action-bar and keybinding support for pet commands.
 
 ## 1.1.0
 
-- Attempted secure WrapScript helpers (superseded by 1.2)
+- Tested an early approach to secure pet commands.
 
 ## 1.0.0
 
-- Initial experiment (direct `PetAttack()` — blocked by Blizzard)
+- First PetAssist release.

@@ -214,7 +214,7 @@ git tag v1.9.2
 git push origin v1.9.2
 ```
 
-Requires GitHub secret `CF_API_KEY` and `## X-Curse-Project-ID` in the `.toc`.
+Requires GitHub secret `CF_API_KEY` and `## X-Curse-Project-ID` in the `.toc`. The workflow extracts the matching version section from `CHANGELOG.md` and publishes only that section as release notes. For manual workflow runs, select a version tag rather than a branch.
 
 
 ## Development checks

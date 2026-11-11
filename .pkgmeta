@@ -10,4 +10,4 @@ ignore:
   - icon.png
   - .github
   - tests
-manual-changelog: CHANGELOG.md
+manual-changelog: .release-notes.md

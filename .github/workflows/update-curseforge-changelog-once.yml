@@ -1,0 +1,52 @@
+name: Update existing CurseForge changelogs
+
+on:
+  push:
+    paths:
+      - .github/workflows/update-curseforge-changelog-once.yml
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    if: github.repository == 'nightdread/PetAssist' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update the two 1.9.4 release notes
+        env:
+          CURSEFORGE_TOKEN: ${{ secrets.CF_API_KEY }}
+        run: |
+          python3 - <<'PY'
+          import json, os, re, sys, urllib.error, urllib.request
+          from pathlib import Path
+
+          token = os.environ.get('CURSEFORGE_TOKEN')
+          if not token:
+              sys.exit('CurseForge token is not configured')
+          source = Path('CHANGELOG.md').read_text(encoding='utf-8')
+          match = re.search(r'(?ms)^## 1\.9\.4\s*\n(.*?)(?=^## |\Z)', source)
+          if not match or not match.group(1).strip():
+              sys.exit('Missing 1.9.4 changelog section')
+          notes = '## What’s new in 1.9.4\n\n' + match.group(1).strip() + '\n'
+          boundary = 'PetAssistChangelogUpdateBoundary'
+          url = 'https://wow.curseforge.com/api/projects/1719459/update-file'
+          for file_id in (9532620, 9532623):
+              metadata = json.dumps({'fileID': file_id, 'changelog': notes,
+                                     'changelogType': 'markdown'}, ensure_ascii=False)
+              body = (f'--{boundary}\r\nContent-Disposition: form-data; name="metadata"\r\n'
+                      f'\r\n{metadata}\r\n--{boundary}--\r\n').encode('utf-8')
+              request = urllib.request.Request(url, data=body, method='POST', headers={
+                  'X-Api-Token': token,
+                  'Content-Type': f'multipart/form-data; boundary={boundary}',
+              })
+              try:
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      result = json.load(response)
+              except urllib.error.HTTPError as error:
+                  sys.exit(f'CurseForge update failed for file {file_id}: HTTP {error.code}')
+              if result.get('id') != file_id:
+                  sys.exit(f'Unexpected response for file {file_id}')
+              print(f'Updated changelog for file {file_id}')
+          PY

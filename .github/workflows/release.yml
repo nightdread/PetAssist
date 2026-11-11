@@ -30,6 +30,13 @@ jobs:
       - name: Install test runtime
         run: python -m pip install lupa==2.8
 
+      - name: Prepare release notes for this tag
+        env:
+          RELEASE_REF: ${{ github.ref }}
+        run: |
+          python -m unittest discover -s tests -p test_release_notes.py
+          python .github/scripts/release_notes.py "$RELEASE_REF" CHANGELOG.md .release-notes.md
+
       - name: Package Forever without uploading
         uses: BigWigsMods/packager@v2
         with:
