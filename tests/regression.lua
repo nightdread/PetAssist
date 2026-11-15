@@ -5,6 +5,9 @@ local frames, bindings, actions, macros, spellNames = {}, {}, {}, {}, {
   [5484] = "Howl of Terror", [13809] = "Frost Trap", [6603] = "Attack",
 }
 local combat, secure, keyDown, page = false, false, true, 1
+local cursorKind, cursorID
+local accountMacroCount, characterMacroCount = 0, 0
+local macroMenuButtons, macroMenuTitle
 local executed, petCommands, messages, timers = {}, {}, {}, {}
 local Frame = {}
 Frame.__index = Frame
@@ -167,6 +170,26 @@ function GetMacroInfo(id)
   local macro = macros[id]
   if macro then return macro[1], nil, macro[2] end
 end
+function GetCursorInfo() return cursorKind, cursorID end
+function GetNumMacros() return accountMacroCount, characterMacroCount end
+if PRELOAD_SOURCE then
+  Constants = {MacroConsts = {MAX_ACCOUNT_MACROS = 120}}
+else
+  MAX_ACCOUNT_MACROS = 120
+end
+MenuUtil = {
+  CreateContextMenu = function(owner, build)
+    macroMenuButtons, macroMenuTitle = {}, nil
+    build(owner, {
+      SetScrollMode = function() end,
+      CreateTitle = function(_, title) macroMenuTitle = title end,
+      CreateButton = function(_, label, selectMacro, name)
+        assert(label == name)
+        macroMenuButtons[#macroMenuButtons + 1] = function() selectMacro(name) end
+      end,
+    })
+  end,
+}
 function wipe(t) for k in pairs(t) do t[k] = nil end end
 function RegisterStateDriver(f, name, driver) f:SetAttribute("state-" .. name, "1") end
 function GetBindingKey(command)
@@ -247,6 +270,54 @@ if FOREVER_ONLY then
       assert(PetAssistHeader:GetAttribute("pa_enabled") == false)
     end)
   else
+    check("Forever lists account and character macros without an action slot", function()
+      local f = PetAssistOptionsPanel
+      f.selectTab("rules")
+      f.ruleDrop.scripts.OnClick(f.ruleDrop)
+      assert(#macroMenuButtons == 0 and macroMenuTitle)
+      macros[1] = {"Account Macro", "/cast Fear"}
+      macros[2] = {"account macro", "/cast Corruption"}
+      macros[121] = {"Character Macro", "/castsequence Corruption, Fear"}
+      accountMacroCount, characterMacroCount = 2, 1
+      f.ruleDrop.scripts.OnClick(f.ruleDrop)
+      assert(#macroMenuButtons == 2)
+      macroMenuButtons[1]()
+      assert(f.ruleName:GetText() == "Account Macro")
+      macroMenuButtons[2]()
+      assert(f.ruleName:GetText() == "Character Macro")
+      assert(not GetCursorInfo() and not PetAssistDB.rules["character macro"])
+      f.ruleChoices.buttons.attack.scripts.OnClick()
+      f.ruleApply.scripts.OnClick()
+      assert(PetAssistDB.rules["character macro"] == "attack")
+      assert(actions[1][1] == "spell" and actions[2][1] == "spell")
+      local oldAction = actions[2]
+      actions[2] = {"macro", 121}
+      command("refresh")
+      click("2")
+      assert(executed[1] == 2 and petCommands[1]:find("/petattack", 1, true))
+      actions[2] = oldAction
+      command("rule clear Character Macro")
+      macros[1], macros[2], macros[121] = nil, nil, nil
+      accountMacroCount, characterMacroCount = 0, 0
+    end)
+    check("Forever dropped macro rule forwards the original action", function()
+      local f = PetAssistOptionsPanel
+      command("config")
+      f.selectTab("rules")
+      local oldAction = actions[1]
+      local body = "/castsequence Corruption, Fear"
+      macros[20], actions[1] = {"Forever Macro", body}, {"macro", 20}
+      cursorKind, cursorID = "macro", 20
+      f.ruleDrop.scripts.OnReceiveDrag(f.ruleDrop)
+      assert(f.ruleName:GetText() == "Forever Macro" and not PetAssistDB.rules["forever macro"])
+      assert(cursorKind == "macro" and cursorID == 20)
+      f.ruleChoices.buttons.attack.scripts.OnClick(); f.ruleApply.scripts.OnClick()
+      click("1")
+      assert(petCommands[1]:find("/petattack", 1, true) and #executed == 1 and executed[1] == 1)
+      assert(macros[20][2] == body)
+      cursorKind, cursorID, actions[1], macros[20] = nil, nil, oldAction, nil
+      command("rule clear Forever Macro")
+    end)
     check("Forever SoftCC Fear still recalls", function()
       click("1")
       assert(#petCommands == 1 and petCommands[1] == "/petpassive\n/petfollow")
@@ -613,6 +684,28 @@ check("rule editor applies and clears same policy as commands", function()
   f.ruleChoices.buttons.clear.scripts.OnClick()
   f.ruleApply.scripts.OnClick()
   assert(PetAssistDB.rules.corruption==nil)
+end)
+check("macro drops fill the editor without saving or consuming the cursor", function()
+  local f = PetAssistOptionsPanel
+  f.selectTab("rules")
+  macros[20] = {"Test Macro", "/cast Corruption"}
+  cursorKind, cursorID = "macro", 20
+  f.ruleName.scripts.OnReceiveDrag(f.ruleName)
+  assert(f.ruleName:GetText() == "Test Macro" and PetAssistDB.rules["test macro"] == nil)
+  assert(f.ruleChoices.buttons.ignore:GetChecked() and cursorKind == "macro" and cursorID == 20)
+  f.ruleChoices.buttons.attack.scripts.OnClick(); f.ruleApply.scripts.OnClick()
+  assert(PetAssistDB.rules["test macro"] == "attack")
+  f.ruleChoices.buttons.recall.scripts.OnClick()
+  f.ruleDrop.scripts.OnReceiveDrag(f.ruleDrop)
+  assert(f.ruleChoices.buttons.attack:GetChecked() and PetAssistDB.rules["test macro"] == "attack")
+  cursorKind, cursorID = "item", 123
+  f.ruleDrop.scripts.OnClick(f.ruleDrop)
+  assert(f.ruleName:GetText() == "Test Macro" and cursorKind == "item" and cursorID == 123)
+  cursorKind, cursorID = "macro", 999
+  f.ruleDrop.scripts.OnClick(f.ruleDrop)
+  assert(f.ruleName:GetText() == "Test Macro" and cursorKind == "macro" and cursorID == 999)
+  cursorKind, cursorID = nil, nil
+  PetAssistDB.rules["test macro"] = nil
 end)
 check("options toggle stance, macro policy and optional CC", function()
   local f=PetAssistOptionsPanel

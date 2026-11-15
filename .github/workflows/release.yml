@@ -5,6 +5,14 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      game:
+        description: Game package to publish
+        type: choice
+        default: forever
+        options:
+          - forever
+          - classic
 
 permissions:
   contents: write
@@ -38,11 +46,13 @@ jobs:
           python .github/scripts/release_notes.py "$RELEASE_REF" CHANGELOG.md .release-notes.md
 
       - name: Package Forever without uploading
+        if: inputs.game != 'classic'
         uses: BigWigsMods/packager@v2
         with:
           args: -d -g forever -r ./.release/forever
 
       - name: Validate Forever package
+        if: inputs.game != 'classic'
         shell: bash
         run: |
           shopt -s nullglob
@@ -54,16 +64,19 @@ jobs:
           python tests/run.py --archive "${forever[0]}"
 
       - name: Upload validated Forever package contents
+        if: inputs.game != 'classic'
         uses: BigWigsMods/packager@v2
         with:
           args: -c -o -g forever -r ./.release/forever
 
       - name: Package Classic without uploading
+        if: inputs.game == 'classic'
         uses: BigWigsMods/packager@v2
         with:
           args: -d -g classic -r ./.release/classic
 
       - name: Validate Classic package
+        if: inputs.game == 'classic'
         shell: bash
         run: |
           shopt -s nullglob
@@ -75,6 +88,7 @@ jobs:
           python tests/run.py --archive "${classic[0]}"
 
       - name: Upload validated Classic package contents
+        if: inputs.game == 'classic'
         uses: BigWigsMods/packager@v2
         with:
           args: -c -o -g classic -r ./.release/classic

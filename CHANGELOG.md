@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.10.0-alpha.1
+
+### New in the WoW Forever alpha
+
+- **Choose a macro for a rule.** Open **PetAssist → Rules → Choose macro** to select an account or character macro. Save a rule by name and use the macro in any action-bar slot.
+- **Drag in a macro.** Drop an icon from the macro window or action bar onto the name field to fill it in. If you picked up the icon from an action bar, return it to the bar before using the macro again.
+- **Set up a `/castsequence` rule.** Choose the macro, select **Send pet to attack**, and click **Save rule**. PetAssist issues the attack command when you press the macro.
+
+Automated checks cover macro selection and rule dispatch. The new controls still need testing in WoW Forever.
+
 ## 1.9.4
 
 ### New

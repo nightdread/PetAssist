@@ -528,7 +528,9 @@ local UI_TRANSLATIONS = {
     UI_AUTO_HINT = "Recognize simple spell macros. Leave complex macros unchanged.",
     UI_ATTACK = "Send pet to attack", UI_RECALL_ACTION = "Recall pet", UI_IGNORE = "Leave pet unchanged",
     UI_MACRO_HINT = "Macros with their own pet commands always keep control of the pet.",
-    UI_RULES_HINT = "Use the exact spell or macro name. Rules override the general mode and crowd-control protection.",
+    UI_RULES_HINT = "Enter an exact name or drag in a macro from the action bar or macro window. Rules override the general mode and crowd-control protection.",
+    UI_DROP_MACRO = "Drop macro here", UI_CHOOSE_MACRO = "Choose macro", UI_NO_MACROS = "No macros available",
+    UI_MACRO_PICKED = "If you picked up the macro from the action bar, return it to its slot. Then choose and save a rule.",
     UI_NAME = "Spell or macro name", UI_DEFAULT = "Use default behavior (remove rule)",
     UI_SAVE = "Save rule", UI_SAVED = "Saved rules — click one to edit", UI_EMPTY = "No custom rules yet.",
     UI_EXCLUSIONS = "Excluded names (custom mode only)", UI_EXCLUSIONS_HINT = "Enter a name to add or remove it from the custom mode exclusions.",
@@ -588,7 +590,9 @@ local UI_TRANSLATIONS = {
     UI_AUTO_HINT = "Распознавать простые макросы заклинаний. Не менять поведение сложных макросов.",
     UI_ATTACK = "Отправить питомца в атаку", UI_RECALL_ACTION = "Отозвать питомца", UI_IGNORE = "Не менять поведение питомца",
     UI_MACRO_HINT = "Макросы со своими командами питомцу всегда сохраняют управление им.",
-    UI_RULES_HINT = "Введите точное имя способности или макроса. Правило важнее общего режима и защиты контроля.",
+    UI_RULES_HINT = "Введите точное имя или перетащите макрос с панели действий или из окна макросов. Правило важнее общего режима и защиты контроля.",
+    UI_DROP_MACRO = "Перетащите макрос", UI_CHOOSE_MACRO = "Выбрать макрос", UI_NO_MACROS = "Нет сохранённых макросов",
+    UI_MACRO_PICKED = "Если вы взяли макрос с панели действий, верните его в ячейку. Затем выберите и сохраните правило.",
     UI_NAME = "Имя способности или макроса", UI_DEFAULT = "Поведение по умолчанию (удалить правило)",
     UI_SAVE = "Сохранить правило", UI_SAVED = "Сохранённые правила — нажмите для изменения", UI_EMPTY = "Отдельных правил пока нет.",
     UI_EXCLUSIONS = "Исключения (только для своего списка)", UI_EXCLUSIONS_HINT = "Введите имя, чтобы добавить или удалить исключение для этого режима.",
@@ -1972,11 +1976,65 @@ local function CreateOptions()
   Text(rules, L.UI_RULES_HINT, 8)
   Text(rules, L.UI_NAME, 66, true)
   local ruleName = CreateFrame("EditBox", nil, rules, "InputBoxTemplate")
-  ruleName:SetSize(480, 26); ruleName:SetPoint("TOPLEFT", 8, -90)
+  ruleName:SetSize(270, 26); ruleName:SetPoint("TOPLEFT", 8, -90)
   ruleName:SetAutoFocus(false)
   ruleName:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+  ruleName:SetScript("OnTextChanged", function() if f.ruleNotice then f.ruleNotice:SetText("") end end)
   f.ruleName = ruleName
   local ruleMode = "ignore"
+  local function LoadRuleMacro(name)
+    ruleName:SetText(name)
+    ruleMode = DB().rules[name] or DB().rules[name:lower()] or "ignore"
+    ruleName:ClearFocus()
+    f.ruleNotice:SetText("")
+    RefreshOptionsUI()
+  end
+  local function ReceiveRuleMacro()
+    if not GetCursorInfo then return end
+    local kind, id = GetCursorInfo()
+    if kind ~= "macro" or not id then return end
+    local name = GetMacroInfo(id)
+    if type(name) ~= "string" or name == "" then return end
+    LoadRuleMacro(name)
+    f.ruleNotice:SetText(L.UI_MACRO_PICKED)
+    -- Keep the cursor intact: a macro picked up from an action bar may have
+    -- been removed from its slot, which only the player can safely restore.
+  end
+  ruleName:SetScript("OnReceiveDrag", ReceiveRuleMacro)
+  ruleName:SetScript("OnMouseDown", ReceiveRuleMacro)
+  local characterMacroOffset = Constants and Constants.MacroConsts and Constants.MacroConsts.MAX_ACCOUNT_MACROS
+    or MAX_ACCOUNT_MACROS
+  local canChooseMacro = MenuUtil and MenuUtil.CreateContextMenu and GetNumMacros and characterMacroOffset
+  f.ruleDrop = Button(rules, canChooseMacro and L.UI_CHOOSE_MACRO or L.UI_DROP_MACRO, 290, 90, 198, function(button)
+    if GetCursorInfo and GetCursorInfo() then
+      ReceiveRuleMacro()
+      return
+    end
+    if not canChooseMacro then return end
+    MenuUtil.CreateContextMenu(button, function(_, menu)
+      local accountCount, characterCount = GetNumMacros()
+      local names, seen = {}, {}
+      for i = 1, accountCount + characterCount do
+        local index = i <= accountCount and i or characterMacroOffset + i - accountCount
+        local name = GetMacroInfo(index)
+        local key = name and name:lower()
+        if key and key:find("%S") and not seen[key] then
+          seen[key] = true
+          names[#names + 1] = name
+        end
+      end
+      if #names == 0 then
+        menu:CreateTitle(L.UI_NO_MACROS)
+        return
+      end
+      table.sort(names)
+      menu:SetScrollMode(320)
+      for _, name in ipairs(names) do
+        menu:CreateButton(name, LoadRuleMacro, name)
+      end
+    end)
+  end)
+  f.ruleDrop:SetScript("OnReceiveDrag", ReceiveRuleMacro)
   local policyLabels = {attack=L.UI_ATTACK, recall=L.UI_RECALL_ACTION, ignore=L.UI_IGNORE}
   f.ruleChoices = Choices(rules, 126, {
     {"attack", L.UI_ATTACK}, {"recall", L.UI_RECALL_ACTION},
@@ -1992,8 +2050,8 @@ local function CreateOptions()
     Changed()
     f.ruleNotice:SetText(string.format(ruleMode == "clear" and L.UI_REMOVED_NOTICE or L.UI_SAVED_NOTICE, name))
   end)
-  Text(rules, L.UI_SAVED, 348, true)
-  local empty = Text(rules, L.UI_EMPTY, 380)
+  Text(rules, L.UI_SAVED, 370, true)
+  local empty = Text(rules, L.UI_EMPTY, 402)
   local rows = {}
   local exclusions = CreateFrame("Frame", nil, rules)
   exclusions:SetSize(514, 220)
@@ -2021,7 +2079,7 @@ local function CreateOptions()
     for name in pairs(DB().rules) do names[#names + 1] = name end
     table.sort(names)
     for i, name in ipairs(names) do
-      if not rows[i] then rows[i] = Button(rules, "", 4, 378 + (i - 1) * 32, 488) end
+      if not rows[i] then rows[i] = Button(rules, "", 4, 400 + (i - 1) * 32, 488) end
       local row = rows[i]
       row:SetText(name .. " — " .. (policyLabels[DB().rules[name]] or DB().rules[name]))
       row:SetScript("OnClick", function()
@@ -2034,7 +2092,7 @@ local function CreateOptions()
     for i = #names + 1, #rows do rows[i]:Hide() end
     if #names == 0 then empty:Show() else empty:Hide() end
     f.ruleRows = rows
-    local bottom = 388 + math.max(1, #names) * 32 + 20
+    local bottom = 410 + math.max(1, #names) * 32 + 20
     exclusions:ClearAllPoints(); exclusions:SetPoint("TOPLEFT", 0, -bottom)
     local blocked = {}
     for name in pairs(DB().blacklist) do blocked[#blocked + 1] = name end

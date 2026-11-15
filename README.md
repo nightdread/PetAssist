@@ -107,7 +107,11 @@ Toggle: options checkbox or `/pa stance on|off`.
 
 Open **Esc → Options → AddOns → PetAssist** to manage the addon without chat commands. The settings are grouped into **General** (pet target, attack mode, Recall key and stance), **Advanced** (crowd-control protection and macro behavior), **Rules** (spell/macro overrides and custom exclusions), and **Diagnostics** (status, action-bar refresh, button checks and reports). Pages scroll on smaller settings windows. Selected choices are highlighted, and you can click anywhere on a choice to select it. Changes apply automatically, or after combat ends. Chat commands remain available as shortcuts.
 
-In the Rules tab, enter a localized spell name / exact macro name, select a behavior and save. Click a saved rule to edit it; choose default behavior to remove it. Custom exclusions only apply in custom mode. You can also use chat commands:
+In the Rules tab, enter a localized spell name or exact macro name, select a behavior and save. Click a saved rule to edit it, or choose default behavior to remove it. Custom exclusions only apply in custom mode.
+
+In the WoW Forever 1.10 alpha, click **Choose macro** to select an account or character macro, or drag its icon from the macro window or action bar onto the name field. If you picked it up from the action bar, return the icon to the bar. The saved rule follows the macro name across action-bar slots. For a `/castsequence` macro that should send your pet, select **Send pet to attack** and click **Save rule**.
+
+You can also use chat commands:
 
 ```text
 /pa rule recall Fear macro
@@ -207,14 +211,14 @@ Warlock / Hunter pets. Forever shares Mainline-family APIs; if secure OnClick sn
 
 ## Releasing (CurseForge)
 
-The release workflow creates and validates separate `-classic.zip` and `-forever.zip` archives (packager maps `11509` → classic, `16001` → forever), then uploads them sequentially. Releases upload when you push a version tag:
+The release workflow builds, validates, and uploads the `-forever.zip` package when you push a version tag:
 
 ```bash
 git tag v1.9.2
 git push origin v1.9.2
 ```
 
-Requires GitHub secret `CF_API_KEY` and `## X-Curse-Project-ID` in the `.toc`. The workflow extracts the matching version section from `CHANGELOG.md` and publishes only that section as release notes. For manual workflow runs, select a version tag rather than a branch.
+Requires GitHub secret `CF_API_KEY` and `## X-Curse-Project-ID` in the `.toc`. The workflow publishes the section of `CHANGELOG.md` that matches the version tag. To publish Classic Era on request, run the workflow manually from a version tag and select `classic`.
 
 
 ## Development checks
