@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.10.0
+
+### New in WoW Forever
+
+- **Choose a macro for a rule.** Select an account or character macro in **PetAssist → Rules → Choose macro**. Saved rules follow the macro name across action-bar slots.
+- **Drag in a macro.** Drop its icon from the macro window or action bar onto the name field. If you picked it up from the action bar, return the icon to the bar.
+- **Configure a `/castsequence` macro.** Select it in Rules, choose **Send pet to attack**, and save. Pressing the macro issues the pet attack command.
+
+The macro picker, both drag sources, and `/castsequence` with pet attack were confirmed in WoW Forever on 1.10.0-alpha.1, including execution in combat.
+
 ## 1.10.0-alpha.1
 
 ### New in the WoW Forever alpha

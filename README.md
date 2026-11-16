@@ -109,7 +109,7 @@ Open **Esc → Options → AddOns → PetAssist** to manage the addon without ch
 
 In the Rules tab, enter a localized spell name or exact macro name, select a behavior and save. Click a saved rule to edit it, or choose default behavior to remove it. Custom exclusions only apply in custom mode.
 
-In the WoW Forever 1.10 alpha, click **Choose macro** to select an account or character macro, or drag its icon from the macro window or action bar onto the name field. If you picked it up from the action bar, return the icon to the bar. The saved rule follows the macro name across action-bar slots. For a `/castsequence` macro that should send your pet, select **Send pet to attack** and click **Save rule**.
+In WoW Forever 1.10, click **Choose macro** to select an account or character macro, or drag its icon from the macro window or action bar onto the name field. If you picked it up from the action bar, return the icon to the bar. The saved rule follows the macro name across action-bar slots. For a `/castsequence` macro that should send your pet, select **Send pet to attack** and click **Save rule**.
 
 You can also use chat commands:
 
